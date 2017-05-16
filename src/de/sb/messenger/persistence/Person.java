@@ -35,7 +35,7 @@ public class Person extends BaseEntity {
 	@Enumerated(EnumType.STRING)
 	private Group group;
 	
-	@Column(name = "email")
+	@Column(name = "email", unique = true)
 	@Pattern(regexp = "(.+)@(.+)", message = "{invalid.email}")
 	@NotNull
 	@Size(min = 1, max = 128)

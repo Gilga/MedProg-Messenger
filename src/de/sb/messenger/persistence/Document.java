@@ -19,7 +19,7 @@ import javax.validation.constraints.Size;
 public class Document extends BaseEntity {
 	static private final byte[] EMPTY_HASH = mediaHash(new byte[0]);
 	
-	@Column(name = "contentHash")
+	@Column(name = "contentHash", unique = true)
 	@NotNull 
 	@Size(min = 32, max = 32)
 	private byte[] contentHash;
