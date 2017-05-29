@@ -10,15 +10,15 @@ import javax.validation.constraints.Size;
 public class Address {
 
 	
-	@Column(name="street")
+	@Column(name="street", updatable = false, insertable =false)
 	@Size(min = 0, max = 63) @Pattern(regexp = "([A-Za-z0-9/. -]{2,} [0-9a-z]+)")
 	private String street;
 	
-	@Column(name="postcode")
+	@Column(name="postcode", updatable = false, insertable =false)
 	@Size(min = 0, max = 15) @Pattern(regexp = "^[0-9]*$")
 	private String postcode;
 	
-	@Column(name="city")
+	@Column(name="city", nullable = false, updatable = false, insertable =false)
 	@NotNull @Size(min = 1, max = 63) @Pattern(regexp = "([A-Za-z/ -]{2,})")
 	private String city;
 

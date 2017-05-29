@@ -19,18 +19,18 @@ import javax.validation.constraints.Size;
 public class Document extends BaseEntity {
 	static private final byte[] EMPTY_HASH = mediaHash(new byte[0]);
 	
-	@Column(name = "contentHash", unique = true)
+	@Column(name = "contentHash", unique = true, nullable = false)
 	@NotNull 
 	@Size(min = 32, max = 32)
 	private byte[] contentHash;
 	
-	@Column(name = "contentType")
+	@Column(name = "contentType", nullable = false)
 	@NotNull 
 	@Size(min=1, max=63) 
 	@Pattern(regexp = "([a-z]+)/([a-z.+-]+)")
 	private String contentType;
 	
-	@Column(name = "content")
+	@Column(name = "content" , nullable = false)
 	@NotNull 
 	@Size(min = 1, max = 16777215)
 	private byte[] content;

@@ -15,14 +15,14 @@ import javax.validation.constraints.Size;
 @PrimaryKeyJoinColumn(name="messageIdentity")
 public class Message extends BaseEntity {
 	@ManyToOne
-	@JoinColumn(name="authorReference")
+	@JoinColumn(name="authorReference", nullable = false)
 	private Person author;
 	
 	@ManyToOne
-	@JoinColumn(name="subjectReference")
+	@JoinColumn(name="subjectReference", nullable = false)
 	private BaseEntity subject;
 	
-	@Column(name = "body")
+	@Column(name = "body", nullable = false)
 	@Size(min = 1, max = 4093)
 	private String body;
 

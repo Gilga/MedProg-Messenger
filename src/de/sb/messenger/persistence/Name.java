@@ -10,12 +10,12 @@ import javax.validation.constraints.Size;
 public class Name {
 	
 	
-	@Column(name="givenName")
+	@Column(name="givenName", nullable = false, updatable = false, insertable =false)
 	@NotNull 
 	@Size(min = 1, max = 31)
 	private String given;
 	
-	@Column(name="familyName")
+	@Column(name="familyName", nullable = false, updatable = false, insertable =false)
 	@NotNull 
 	@Size(min = 1, max = 31)
 	private String family;

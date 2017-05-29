@@ -31,17 +31,17 @@ import javax.validation.constraints.Size;
 @PrimaryKeyJoinColumn(name="personIdentity")
 public class Person extends BaseEntity {
 
-	@Column(name = "groupAlias")
+	@Column(name = "groupAlias", nullable = false)
 	@Enumerated(EnumType.STRING)
 	private Group group;
 	
-	@Column(name = "email", unique = true)
+	@Column(name = "email", unique = true, nullable = false)
 	@Pattern(regexp = "(.+)@(.+)", message = "{invalid.email}")
 	@NotNull
 	@Size(min = 1, max = 128)
 	private String email;
 	
-	@Column(name = "passwordHash")
+	@Column(name = "passwordHash", nullable = false)
 	@NotNull
 	@Size(min = 32, max = 32)
 	private byte[] passwordHash;
@@ -55,22 +55,24 @@ public class Person extends BaseEntity {
 	private Address address;
 	
 	@ManyToOne
-	@JoinColumn(name="avatarReference")
+	@JoinColumn(name="avatarReference", nullable = false)
 	// TODO: Updateable Nullable
 	private Document avatar;
 	
 	@OneToMany(mappedBy = "author", cascade=CascadeType.REMOVE)
+	@Column(updatable = false, insertable =false)
 	private Set<Message> messagesAuthored;
 	
 	@ManyToMany(mappedBy = "peopleObserved", cascade=CascadeType.REMOVE)
+	@Column(updatable = false, insertable =false)
 	private Set<Person> peopleObserving;
 	
 	@ManyToMany
 	@JoinTable(
 		schema="messenger",
 		name = "observationassociation",
-		joinColumns = @JoinColumn(name="observingReference", updatable = true),
-		inverseJoinColumns = @JoinColumn(name="observedReference" , updatable = false)
+		joinColumns = @JoinColumn(name="observingReference", updatable = true, nullable = false),
+		inverseJoinColumns = @JoinColumn(name="observedReference" , updatable = false, nullable = false)
 	)
 	private Set<Person> peopleObserved;
 
@@ -146,7 +148,11 @@ public class Person extends BaseEntity {
 	}
 
 	@Size(min = 32, max = 32)
-	static public byte[] passwordHash(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		return MessageDigest.getInstance("SHA-256").digest(password.getBytes("UTF-8"));
+	static public byte[] passwordHash(String password){
+		try{
+			return MessageDigest.getInstance("SHA-256").digest(password.getBytes("UTF-8"));
+		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+			throw new AssertionError(e);
+			}
 	}
 }
