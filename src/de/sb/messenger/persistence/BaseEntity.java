@@ -15,23 +15,34 @@ import javax.persistence.InheritanceType;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.Min;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlSeeAlso;
+import javax.xml.bind.annotation.XmlType;
 
 @Entity
 @Table(schema="messenger", name = "BaseEntity")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name = "discriminator", discriminatorType=DiscriminatorType.STRING, length=20)
+@XmlAccessorType(XmlAccessType.NONE)
+@XmlType(name="BaseEntity")
+@XmlSeeAlso({Message.class, Person.class, Document.class})
 public class BaseEntity implements Comparable<BaseEntity> {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "identity")
+	@XmlElement
 	private long identiy;
 	
 	@Column(name = "version")
 	@Min(1)
+	@XmlElement
 	private int version;
 	
 	@Column(name = "creationTimestamp")
+	@XmlElement
 	private long creationTimestamp;
 	
 	@OneToMany(mappedBy = "subject", cascade=CascadeType.REMOVE)
