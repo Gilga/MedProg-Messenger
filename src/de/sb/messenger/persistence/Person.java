@@ -24,15 +24,22 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 @Entity
 @Table(schema="messenger", name = "Person")
 @DiscriminatorValue(value = "Person")
 @PrimaryKeyJoinColumn(name="personIdentity")
+@XmlRootElement
+@XmlType
 public class Person extends BaseEntity {
 
 	@Column(name = "groupAlias", nullable = false)
 	@Enumerated(EnumType.STRING)
+	@NotNull
+	@XmlElement
 	private Group group;
 	
 	@Column(name = "email", unique = true, nullable = false)
@@ -48,10 +55,14 @@ public class Person extends BaseEntity {
 
 	@Embedded 
 	@Valid
+	@NotNull
+	@XmlElement
 	private Name name;
 
 	@Embedded 
 	@Valid
+	@NotNull
+	@XmlElement
 	private Address address;
 	
 	@ManyToOne
