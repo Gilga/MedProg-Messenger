@@ -66,16 +66,15 @@ public class Person extends BaseEntity {
 	private Address address;
 	
 	@ManyToOne
-	@JoinColumn(name="avatarReference", nullable = false)
-	// TODO: Updateable Nullable
+	@JoinColumn(name="avatarReference", updatable = true, nullable = true)
 	private Document avatar;
 	
 	@OneToMany(mappedBy = "author", cascade=CascadeType.REMOVE)
-	@JoinColumn(updatable = false, insertable =false)
+	@JoinColumn(updatable = false, insertable = false, nullable = false)
 	private Set<Message> messagesAuthored;
 	
 	@ManyToMany(mappedBy = "peopleObserved", cascade=CascadeType.REMOVE)
-	@JoinColumn(updatable = false, insertable =false)
+	@JoinColumn(updatable = false, insertable = false, nullable = false)
 	private Set<Person> peopleObserving;
 	
 	@ManyToMany
