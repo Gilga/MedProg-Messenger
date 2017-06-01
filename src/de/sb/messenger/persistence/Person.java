@@ -71,11 +71,11 @@ public class Person extends BaseEntity {
 	private Document avatar;
 	
 	@OneToMany(mappedBy = "author", cascade=CascadeType.REMOVE)
-	@Column(updatable = false, insertable =false)
+	@JoinColumn(updatable = false, insertable =false)
 	private Set<Message> messagesAuthored;
 	
 	@ManyToMany(mappedBy = "peopleObserved", cascade=CascadeType.REMOVE)
-	@Column(updatable = false, insertable =false)
+	@JoinColumn(updatable = false, insertable =false)
 	private Set<Person> peopleObserving;
 	
 	@ManyToMany
