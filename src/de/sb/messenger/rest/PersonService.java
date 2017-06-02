@@ -12,7 +12,10 @@ import java.util.Set;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
+import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.CriteriaUpdate;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.Metamodel;
@@ -52,27 +55,18 @@ public class PersonService {
 		return messengerManagerFactory;
 	}
 	
-	// TODO
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
-	public List<Person> getPeople (final String[][] criterias) {
-		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
-		CriteriaQuery<Person> cq = messengerManager.getCriteriaBuilder().createQuery(Person.class);
-		Root<Person> p = cq.from(Person.class);
-		
-		Metamodel m = messengerManager.getMetamodel();
-		EntityType<Person> Person_ = m.entity(Person.class);
-		
-		for(String[] criteria : criterias){
-			String field = criteria[0];
-			String value = criteria[1];
-			if(field == "Name") cq.where(p.get(value).isNotNull()); //Person_.getName()
-			// ...
-		}
+	public List<Person> getPeople (List<Predicate> criteria) {
+		final EntityManager em = RestJpaLifecycleProvider.entityManager("messenger");
 
-		List<Person> people = messengerManager.createQuery(cq).getResultList();
+		CriteriaBuilder cb = em.getCriteriaBuilder();
+		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
+		Root<Person> e = cq.from(Person.class);
+		//CriteriaQuery<Person> all = cq.select(e);
+		if(criteria.size() > 0) cq.where(criteria.toArray(new Predicate[]{}));
 
-		return people;
+		return em.createQuery(cq).getResultList();
 	}
 	
 	@PUT
