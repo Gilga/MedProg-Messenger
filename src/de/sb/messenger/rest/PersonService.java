@@ -16,6 +16,7 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Root;
 import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.Metamodel;
+import javax.servlet.annotation.HttpConstraint;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -26,6 +27,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
+import javax.xml.ws.spi.http.HttpContext;
 
 import de.sb.messenger.persistence.BaseEntity;
 import de.sb.messenger.persistence.Document;
@@ -48,18 +52,24 @@ public class PersonService {
 		return messengerManagerFactory;
 	}
 	
+	// TODO
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
-	public List<Person> getPeople (final String[] criteria) {
+	public List<Person> getPeople (final String[][] criterias) {
 		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
 		CriteriaQuery<Person> cq = messengerManager.getCriteriaBuilder().createQuery(Person.class);
 		Root<Person> p = cq.from(Person.class);
 		
 		Metamodel m = messengerManager.getMetamodel();
 		EntityType<Person> Person_ = m.entity(Person.class);
-		//cq.where(p.get(Person_.getName()).isNull());
-		// TODO
 		
+		for(String[] criteria : criterias){
+			String field = criteria[0];
+			String value = criteria[1];
+			if(field == "Name") cq.where(p.get(value).isNotNull()); //Person_.getName()
+			// ...
+		}
+
 		List<Person> people = messengerManager.createQuery(cq).getResultList();
 
 		return people;
@@ -69,18 +79,20 @@ public class PersonService {
 	public long createsPerson (final Person template, @HeaderParam("Set-Password") final String password) {
 		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
 	
+		boolean update = false;
 		Person person = null;
 		final long identity = template.getIdentiy();
 		
 		if(identity == 0) {
 			person = new Person(template.getEmail(), template.getAvatar());
 			messengerManager.getEntityManagerFactory().getCache().evict(Person.class, person.getIdentiy());
+			update = true;
 		}
 		else {
 			person = getPerson(identity);
 			person.setAvatar(template.getAvatar());
 			person.setEmail(template.getEmail());
-			//person.setGroup(template.getGroup());
+			person.setGroup(template.getGroup());
 		}
 		
 		if (person == null) throw new ClientErrorException(NOT_FOUND);
@@ -89,7 +101,8 @@ public class PersonService {
 			person.setPasswordHash(Person.passwordHash(password));
 		}
 		
-		messengerManager.persist(person); // update?
+		if(!update) messengerManager.persist(person);
+		else messengerManager.merge(person);
 		
 		return identity;
 	}
@@ -139,18 +152,41 @@ public class PersonService {
 		return getPerson(identity).getAvatar();
 	}
 	
+	// TODO
 	@PUT
 	@Path("{identity}/peopleObserved")
 	public void updatePerson (@PathParam("identity") final long identity, Set<Long> peopleObservedIdentities) {
-		// TODO
-		//messengerManager.getEntityManagerFactory().getCache().evict(Person.class, author.getIdentiy());
+		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
+		
+		Person person = getPerson(identity);
+		// ...
+		
+		messengerManager.getEntityManagerFactory().getCache().evict(Person.class, person.getIdentiy());
+		
+		// ...
+		messengerManager.merge(person);
 	}
 	
 	@PUT
 	@Path("{identity}/avatar")
 	@Consumes(MEDIA_TYPE_WILDCARD)
-	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity, String mediaType, byte[] content) {
+	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity, @HeaderParam("Content-type") String mediaType, byte[] content) {
 		Person owner = PersonService.getRequester(authentication);
-		// TODO
+		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
+		//HTTP request body, 
+
+		Document avatar;
+		if(content == null || content.length==0 ){
+			avatar = messengerManager.find(Document.class, 1);
+			if (avatar == null) throw new NotFoundException();
+		}
+		else {
+			 //@Context HttpHeaders hh
+			//hh.getHeaderString("Content-type")
+			avatar = new Document(mediaType,content);
+		}
+		
+		owner.setAvatar(avatar);
+		messengerManager.merge(owner);
 	}
 }

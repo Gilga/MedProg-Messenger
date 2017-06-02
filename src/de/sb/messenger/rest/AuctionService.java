@@ -57,9 +57,9 @@ public class AuctionService {
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Message getMessage (@PathParam("identity") final long identity) {
 		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
-		final BaseEntity entity = messengerManager.find(BaseEntity.class, identity);
+		final Message entity = messengerManager.find(Message.class, identity);
 		if (entity == null) throw new NotFoundException();
-		return (Message) entity;
+		return entity;
 	}
 	
 	@GET
