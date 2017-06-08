@@ -29,61 +29,56 @@ import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 @Entity
-@Table(schema="messenger", name = "Person")
+@Table(schema = "messenger", name = "Person")
 @DiscriminatorValue(value = "Person")
-@PrimaryKeyJoinColumn(name="personIdentity")
+@PrimaryKeyJoinColumn(name = "personIdentity")
 @XmlRootElement
 @XmlType
 public class Person extends BaseEntity {
 
-	@Column(name = "groupAlias", nullable = false)
+	@Column(name = "groupAlias", updatable = true, nullable = false)
 	@Enumerated(EnumType.STRING)
 	@NotNull
 	@XmlElement
 	private Group group;
-	
-	@Column(name = "email", unique = true, nullable = false)
+
+	@Column(name = "email", unique = true, updatable = true, nullable = false)
 	@Pattern(regexp = "(.+)@(.+)", message = "{invalid.email}")
 	@NotNull
 	@Size(min = 1, max = 128)
 	private String email;
-	
-	@Column(name = "passwordHash", nullable = false)
+
+	@Column(name = "passwordHash", updatable = true, nullable = false)
 	@NotNull
 	@Size(min = 32, max = 32)
 	private byte[] passwordHash;
 
-	@Embedded 
+	@Embedded
 	@Valid
 	@NotNull
 	@XmlElement
 	private Name name;
 
-	@Embedded 
+	@Embedded
 	@Valid
 	@NotNull
 	@XmlElement
 	private Address address;
-	
+
 	@ManyToOne
-	@JoinColumn(name="avatarReference", updatable = true, nullable = true)
+	@JoinColumn(name = "avatarReference", updatable = true, nullable = false)
 	private Document avatar;
-	
-	@OneToMany(mappedBy = "author", cascade=CascadeType.REMOVE)
-	@JoinColumn(updatable = false, insertable = false, nullable = false)
+
+	@OneToMany(mappedBy = "author", cascade = CascadeType.REMOVE)
+	@JoinColumn(updatable = false, insertable = false)
 	private Set<Message> messagesAuthored;
-	
-	@ManyToMany(mappedBy = "peopleObserved", cascade=CascadeType.REMOVE)
+
+	@ManyToMany(mappedBy = "peopleObserved", cascade = CascadeType.REMOVE)
 	@JoinColumn(updatable = false, insertable = false, nullable = false)
 	private Set<Person> peopleObserving;
-	
+
 	@ManyToMany
-	@JoinTable(
-		schema="messenger",
-		name = "observationassociation",
-		joinColumns = @JoinColumn(name="observingReference", updatable = true, nullable = false),
-		inverseJoinColumns = @JoinColumn(name="observedReference" , updatable = false, nullable = false)
-	)
+	@JoinTable(schema = "messenger", name = "ObservationAssociation", joinColumns = @JoinColumn(name = "observingReference", updatable = true, nullable = false), inverseJoinColumns = @JoinColumn(name = "observedReference", updatable = false, nullable = false))
 	private Set<Person> peopleObserved;
 
 	public Person(String email, Document avatar) {
@@ -158,11 +153,11 @@ public class Person extends BaseEntity {
 	}
 
 	@Size(min = 32, max = 32)
-	static public byte[] passwordHash(String password){
-		try{
+	static public byte[] passwordHash(String password) {
+		try {
 			return MessageDigest.getInstance("SHA-256").digest(password.getBytes("UTF-8"));
 		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
 			throw new AssertionError(e);
-			}
+		}
 	}
 }
