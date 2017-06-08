@@ -3,8 +3,6 @@ package de.sb.messenger.persistence;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import java.security.NoSuchAlgorithmException;
-import java.sql.SQLException;
 import java.util.Set;
 
 import javax.persistence.EntityManager;
@@ -31,7 +29,7 @@ public class DocumentEntityTest extends EntityTest {
 	}
 
 	@Test
-	public void testConstrains(){
+	public void testConstrains() {
 		// valid entity
 		String s = "some content";
 		byte[] content = s.getBytes();
@@ -53,7 +51,7 @@ public class DocumentEntityTest extends EntityTest {
 	}
 
 	@Test
-	public void testLifeCycle() throws NoSuchAlgorithmException, SQLException {
+	public void testLifeCycle() {
 		// create document entity
 		String s = "some content";
 		byte[] content = s.getBytes();
@@ -65,7 +63,7 @@ public class DocumentEntityTest extends EntityTest {
 		entityManager.persist(doc);
 		transaction.commit();
 		this.getWasteBasket().add(doc.getIdentiy());
-		
+
 		transaction.begin();
 		doc = entityManager.find(Document.class, doc.getIdentiy());
 		assertEquals("image/jpeg", doc.getContentType());
@@ -75,7 +73,7 @@ public class DocumentEntityTest extends EntityTest {
 		// remove document from DB
 		entityManager.remove(doc);
 		entityManager.getTransaction().commit();
-		
+
 		// check if document is deleted , find for getter , Reference for setter
 		assertNull(entityManager.find(Document.class, doc.getIdentiy()));
 

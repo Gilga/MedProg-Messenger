@@ -1,10 +1,6 @@
 package de.sb.messenger.persistence;
 
 import static org.junit.Assert.*;
-
-import java.io.UnsupportedEncodingException;
-import java.security.NoSuchAlgorithmException;
-import java.util.Iterator;
 import java.util.Set;
 
 import javax.persistence.EntityManager;
@@ -32,10 +28,9 @@ public class PersonEntityTest extends EntityTest {
 		validator = this.getEntityValidatorFactory().getValidator();
 	}
 
-
 	@SuppressWarnings("static-access")
 	@Test
-	public void testConstrains(){
+	public void testConstrains() {
 
 		// valid entity
 		Person person = new Person("test@gmail.com", new Document());
@@ -46,13 +41,8 @@ public class PersonEntityTest extends EntityTest {
 		person.getAddress().setCity("Berlin");
 		person.setGroup(Group.USER);
 		byte[] hash;
-		try {			
-			hash = person.passwordHash("password");
-			person.setPasswordHash(hash);
-		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
-			throw new AssertionError(e);
-		}
-		
+		hash = person.passwordHash("password");
+		person.setPasswordHash(hash);
 
 		// non-valid entity
 		Person personNV = new Person("testgmail.com", new Document()); // @missing
@@ -79,7 +69,7 @@ public class PersonEntityTest extends EntityTest {
 
 	@SuppressWarnings("static-access")
 	@Test
-	public void testLifeCycle() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+	public void testLifeCycle() {
 		String s = "some content";
 		byte[] content = s.getBytes();
 		Document doc = new Document("image/jpeg", content);
@@ -105,24 +95,23 @@ public class PersonEntityTest extends EntityTest {
 		transaction.commit();
 		this.getWasteBasket().add(doc.getIdentiy());
 		this.getWasteBasket().add(person.getIdentiy());
-		
-		
-		 transaction.begin();
-		 person = entityManager.find(Person.class, person.getIdentiy());
-		 assertEquals(person.getName().getGiven(), "John");
-		 assertEquals(person.getName().getFamily(), "Smith");
-		 assertEquals(person.getAddress().getCity(), "Berlin");
-		 
-		 // remove person from DB
-		 entityManager.remove(person);
-		 transaction.commit();
-		 transaction.begin();
-		 entityManager.remove(doc);		
-		 transaction.commit();
-		 
-		 // check if person is deleted , find for getter , Reference for setter
-		 assertNull(entityManager.find(Document.class, doc.getIdentiy()));
-		 assertNull(entityManager.find(Person.class, person.getIdentiy()));
+
+		transaction.begin();
+		person = entityManager.find(Person.class, person.getIdentiy());
+		assertEquals(person.getName().getGiven(), "John");
+		assertEquals(person.getName().getFamily(), "Smith");
+		assertEquals(person.getAddress().getCity(), "Berlin");
+
+		// remove person from DB
+		entityManager.remove(person);
+		transaction.commit();
+		transaction.begin();
+		entityManager.remove(doc);
+		transaction.commit();
+
+		// check if person is deleted , find for getter , Reference for setter
+		assertNull(entityManager.find(Document.class, doc.getIdentiy()));
+		assertNull(entityManager.find(Person.class, person.getIdentiy()));
 
 	}
 

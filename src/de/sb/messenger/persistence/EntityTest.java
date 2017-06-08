@@ -45,28 +45,28 @@ public class EntityTest {
 	public Set<Long> getWasteBasket() {
 		return wasteBasket;
 	}
-	
-	//copyright = "2015-2015 Sascha Baumeister, all rights reserved"
+
+	// copyright = "2015-2015 Sascha Baumeister, all rights reserved"
 	@After
-	public void emptyWasteBasket () {
+	public void emptyWasteBasket() {
 		final EntityManager entityManager = EM_FACTORY.createEntityManager();
-		try{
+		try {
 			entityManager.getTransaction().begin();
 			for (final Long identity : this.wasteBasket) {
-				try{
+				try {
 					final Object entity = entityManager.find(BaseEntity.class, identity);
-					if (entity != null) entityManager.remove(entity);
-			} catch (final Exception exception) {
-				Logger.getGlobal().log(WARNING, exception.getMessage(), exception);
+					if (entity != null)
+						entityManager.remove(entity);
+				} catch (final Exception exception) {
+					Logger.getGlobal().log(WARNING, exception.getMessage(), exception);
+				}
 			}
-		}
 			entityManager.getTransaction().commit();
 			this.wasteBasket.clear();
 		} finally {
 			entityManager.close();
 		}
 	}
-
 
 	@AfterClass
 	public static void tearDownAfterClass() throws Exception {
@@ -75,4 +75,3 @@ public class EntityTest {
 	}
 
 }
-
