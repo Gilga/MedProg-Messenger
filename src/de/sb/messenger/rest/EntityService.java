@@ -8,6 +8,7 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.Arrays;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import javax.ws.rs.ClientErrorException;
@@ -39,6 +40,16 @@ import de.sb.toolbox.net.RestJpaLifecycleProvider;
 @Path("entities")
 @Copyright(year=2013, holders="Sascha Baumeister")
 public class EntityService {
+	
+	static EntityManagerFactory messengerManagerFactory = null;
+	
+	static private EntityManagerFactory getEntityManagerFactory() {
+		if(messengerManagerFactory==null) {
+			final EntityManager em = getEntityManager();
+			messengerManagerFactory=em.getEntityManagerFactory();
+		}
+		return messengerManagerFactory;
+	}
 	
 	static public EntityManager getEntityManager(){
 		return RestJpaLifecycleProvider.entityManager("messenger");
@@ -90,7 +101,7 @@ public class EntityService {
 
 		final EntityManager em = getEntityManager();
 		if (requester.getGroup() != ADMIN) throw new ClientErrorException(FORBIDDEN);
-		em.getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
+		getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
 
 		// check if getReference() works once https://bugs.eclipse.org/bugs/show_bug.cgi?id=460063 is fixed.
 		final BaseEntity entity = em.find(BaseEntity.class, identity);
