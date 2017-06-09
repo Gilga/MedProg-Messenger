@@ -24,11 +24,8 @@ public class AuctionService {
 	
 	static EntityManagerFactory messengerManagerFactory = null;
 	
-	static private EntityManagerFactory getEntityManagerFactory() {
-		if(messengerManagerFactory==null) {
-			final EntityManager em = EntityService.getEntityManager();
-			messengerManagerFactory=em.getEntityManagerFactory();
-		}
+	static private EntityManagerFactory getEntityManagerFactory(EntityManager em) {
+		if(messengerManagerFactory==null) messengerManagerFactory=em.getEntityManagerFactory();
 		return messengerManagerFactory;
 	}
 	
@@ -39,7 +36,7 @@ public class AuctionService {
 		Person author = PersonService.getRequester(authentication);
 		
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory();
+		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
 		// clear Cache
 		emf.getCache().evict(Person.class, author.getIdentiy());

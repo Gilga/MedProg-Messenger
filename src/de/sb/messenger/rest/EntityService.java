@@ -44,11 +44,8 @@ public class EntityService {
 	
 	static EntityManagerFactory messengerManagerFactory = null;
 	
-	static private EntityManagerFactory getEntityManagerFactory() {
-		if(messengerManagerFactory==null) {
-			final EntityManager em = getEntityManager();
-			messengerManagerFactory=em.getEntityManagerFactory();
-		}
+	static private EntityManagerFactory getEntityManagerFactory(EntityManager em) {
+		if(messengerManagerFactory==null) messengerManagerFactory=em.getEntityManagerFactory();
 		return messengerManagerFactory;
 	}
 	
@@ -110,7 +107,7 @@ public class EntityService {
 
 		final EntityManager em = getEntityManager();
 		if (requester.getGroup() != ADMIN) throw new ClientErrorException(FORBIDDEN);
-		getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
+		getEntityManagerFactory(em).getCache().evict(BaseEntity.class, identity);
 
 		// check if getReference() works once https://bugs.eclipse.org/bugs/show_bug.cgi?id=460063 is fixed.
 		final BaseEntity entity = em.find(BaseEntity.class, identity);

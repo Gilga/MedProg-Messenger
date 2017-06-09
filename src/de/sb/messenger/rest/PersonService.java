@@ -9,14 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
-import javax.persistence.EntityTransaction;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OneToMany;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -32,7 +26,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
 import de.sb.messenger.persistence.Address;
-import de.sb.messenger.persistence.BaseEntity;
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
 import de.sb.messenger.persistence.Name;
@@ -47,11 +40,8 @@ public class PersonService {
 
 	static EntityManagerFactory messengerManagerFactory = null;
 	
-	static private EntityManagerFactory getEntityManagerFactory() {
-		if(messengerManagerFactory==null) {
-			final EntityManager em = EntityService.getEntityManager();
-			messengerManagerFactory=em.getEntityManagerFactory();
-		}
+	static private EntityManagerFactory getEntityManagerFactory(EntityManager em) {
+		if(messengerManagerFactory==null) messengerManagerFactory=em.getEntityManagerFactory();
 		return messengerManagerFactory;
 	}
 	
@@ -92,7 +82,7 @@ public class PersonService {
 	@PUT
 	public long createPerson (final Person template, @HeaderParam("Set-Password") final String password) {
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory();
+		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
 		boolean update = false;
 		Person person = null;
@@ -171,7 +161,7 @@ public class PersonService {
 	@Path("{identity}/peopleObserved")
 	public void updatePerson (@PathParam("identity") final long identity, Set<Long> peopleObservedIdentities) {
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory();
+		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
 		Person person = getPerson(identity);
 
@@ -189,7 +179,7 @@ public class PersonService {
 	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity, @HeaderParam("Content-type") String mediaType, byte[] content) {
 		Person owner = PersonService.getRequester(authentication);
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory();
+		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		//HTTP request body, 
 
 		Document avatar;
