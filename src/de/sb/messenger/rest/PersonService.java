@@ -59,30 +59,30 @@ public class PersonService {
 	public List<Person> getPeople (Long lowerID, Long upperID,
 			String email, Name name, Address address, Group group, Long avatarID) {
 		// search for passwordHash, author, peopleObserved, messenger?
-		
+
 		final EntityManager em = EntityService.getEntityManager();
-		
-	    Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
+
+		Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
 
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
 		Root<Person> e = cq.from(Person.class);
-	    
-		//Constructing list of parameters
-	    List<Predicate> predicates = new ArrayList<Predicate>();
 
-	    //Adding predicates
-	    Predicate p1 = cb.or(cb.isNull(cb.literal(lowerID)),cb.greaterThanOrEqualTo(e.get("identity"),lowerID));
-	    Predicate p2 = cb.or(cb.isNull(cb.literal(upperID)),cb.lessThanOrEqualTo(e.get("identity"),upperID));
-	    Predicate p3 = cb.or(cb.isNull(cb.literal(email)),cb.equal(e.get("email"),email));
-	    Predicate p4 = cb.or(cb.isNull(cb.literal(name)),cb.equal(e.get("name"),name));
-	    Predicate p5 = cb.or(cb.isNull(cb.literal(address)),cb.equal(e.get("address"),address));
-	    Predicate p6 = cb.or(cb.isNull(cb.literal(group)),cb.equal(e.get("groupAlias"),group));
-	    Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)),cb.equal(e.get("avatarReference"),avatar));
-	    
-	    predicates.add(cb.and(p1,p2,p3,p4,p5,p6,p7));
-		
-	    cq.select(e).where(predicates.toArray(new Predicate[]{}));
+		// Constructing list of parameters
+		List<Predicate> predicates = new ArrayList<Predicate>();
+
+		// Adding predicates
+		Predicate p1 = cb.or(cb.isNull(cb.literal(lowerID)), cb.greaterThanOrEqualTo(e.get("identity"), lowerID));
+		Predicate p2 = cb.or(cb.isNull(cb.literal(upperID)), cb.lessThanOrEqualTo(e.get("identity"), upperID));
+		Predicate p3 = cb.or(cb.isNull(cb.literal(email)), cb.equal(e.get("email"), email));
+		Predicate p4 = cb.or(cb.isNull(cb.literal(name)), cb.equal(e.get("name"), name));
+		Predicate p5 = cb.or(cb.isNull(cb.literal(address)), cb.equal(e.get("address"), address));
+		Predicate p6 = cb.or(cb.isNull(cb.literal(group)), cb.equal(e.get("groupAlias"), group));
+		Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)), cb.equal(e.get("avatarReference"), avatar));
+
+		predicates.add(cb.and(p1, p2, p3, p4, p5, p6, p7));
+
+		cq.select(e).where(predicates.toArray(new Predicate[] {}));
 
 		return em.createQuery(cq).getResultList();
 	}
