@@ -12,6 +12,7 @@ import java.util.Set;
 import javax.persistence.CascadeType;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
@@ -116,10 +117,7 @@ public class PersonService {
 		if(password.equals("") != true)
 			person.setPasswordHash(Person.passwordHash(password));
 		
-		if(!update) em.persist(person);
-		else {
-			em.merge(person);
-		}
+		EntityService.update(em,!update ? person : null);
 		
 		return identity;
 	}
@@ -135,9 +133,9 @@ public class PersonService {
 	@Path("{identity}")
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Person getPerson (@PathParam("identity") final long identity) {
-		final BaseEntity entity = EntityService.getEntityManager().find(BaseEntity.class, identity);
+		final Person entity = EntityService.getEntityManager().find(Person.class, identity);
 		if (entity == null) throw new NotFoundException();
-		return (Person) entity;
+		return entity;
 	}
 	
 	@GET
@@ -182,7 +180,7 @@ public class PersonService {
 		
 		// ...
 		
-		em.merge(person);
+		EntityService.update(em,null);
 	}
 	
 	@PUT
@@ -210,6 +208,7 @@ public class PersonService {
 		}
 		
 		owner.setAvatar(avatar);
-		em.merge(owner);
+		
+		EntityService.update(em,null);
 	}
 }

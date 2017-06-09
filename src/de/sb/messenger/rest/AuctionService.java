@@ -46,7 +46,8 @@ public class AuctionService {
 		emf.getCache().evict(BaseEntity.class, subject.getIdentiy());
 
 		Message message  = new Message(author,subject,content);
-		em.persist(message);
+		
+		EntityService.update(em, message);
 		
 		return message.getIdentiy();
 	}

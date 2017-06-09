@@ -9,6 +9,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import java.util.Arrays;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
 import javax.ws.rs.ClientErrorException;
@@ -53,6 +54,14 @@ public class EntityService {
 	
 	static public EntityManager getEntityManager(){
 		return RestJpaLifecycleProvider.entityManager("messenger");
+	}
+	
+	static public void update(EntityManager em, Object obj) {
+		// update
+		EntityTransaction et = em.getTransaction();
+		et.begin();
+		if(obj != null) em.persist(obj);
+		et.commit();
 	}
 
 	/**
