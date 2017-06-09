@@ -1,14 +1,10 @@
 package de.sb.messenger.rest;
 
-import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
-import javax.persistence.Query;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.NotAuthorizedException;
 import de.sb.messenger.persistence.Person;
 import de.sb.toolbox.net.HttpCredentials;
-import de.sb.toolbox.net.RestJpaLifecycleProvider;
-
 
 /**
  * Facade interface for HTTP authentication purposes.
@@ -27,15 +23,13 @@ public interface Authenticator {
 	 *         thread is not open
 	 * @throws NullPointerException (HTTP 500) if the given credentials are {@code null}
 	 */
-	@SuppressWarnings("unused")
 	static public Person authenticate (final HttpCredentials.Basic credentials) throws NotAuthorizedException, PersistenceException, IllegalStateException, NullPointerException {
 		final String pql = "select p from Person as p where p.email = :email"; // and p.password = :password
-		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
 
 		String email = credentials.getUsername(); // username == email?
 		byte[] passwordHash = Person.passwordHash(credentials.getPassword());
 	
-		TypedQuery<Person> query = messengerManager.createQuery(pql, Person.class);
+		TypedQuery<Person> query = EntityService.getEntityManager().createQuery(pql, Person.class);
 		query.setParameter("email", email);
 		//sql passowrd check: pql+=" and p.password = :password"; query.setParameter("password", passwordHash);
 		Person person = query.getSingleResult();

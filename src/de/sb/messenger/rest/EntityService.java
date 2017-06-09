@@ -39,6 +39,10 @@ import de.sb.toolbox.net.RestJpaLifecycleProvider;
 @Path("entities")
 @Copyright(year=2013, holders="Sascha Baumeister")
 public class EntityService {
+	
+	static public EntityManager getEntityManager(){
+		return RestJpaLifecycleProvider.entityManager("messenger");
+	}
 
 	/**
 	 * Returns the entity with the given identity.
@@ -57,9 +61,7 @@ public class EntityService {
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public BaseEntity queryIdentity (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity) {
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
-
-		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
-		final BaseEntity entity = messengerManager.find(BaseEntity.class, identity);
+		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
 		if (entity == null) throw new NotFoundException();
 		return entity;
 	}
@@ -86,21 +88,21 @@ public class EntityService {
 	public void deleteEntity (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity) {
 		final Person requester = Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
-		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
+		final EntityManager em = getEntityManager();
 		if (requester.getGroup() != ADMIN) throw new ClientErrorException(FORBIDDEN);
-		messengerManager.getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
+		em.getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
 
 		// check if getReference() works once https://bugs.eclipse.org/bugs/show_bug.cgi?id=460063 is fixed.
-		final BaseEntity entity = messengerManager.find(BaseEntity.class, identity);
+		final BaseEntity entity = em.find(BaseEntity.class, identity);
 		if (entity == null) throw new ClientErrorException(NOT_FOUND);
-		messengerManager.remove(entity);
+		em.remove(entity);
 
 		try {
-			messengerManager.getTransaction().commit();
+			em.getTransaction().commit();
 		} catch (final RollbackException exception) {
 			throw new ClientErrorException(CONFLICT);
 		} finally {
-			messengerManager.getTransaction().begin();
+			em.getTransaction().begin();
 		}
 	}
 
@@ -125,8 +127,7 @@ public class EntityService {
 	public Message[] queryMessagesCaused (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity) {
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
-		final EntityManager messengerManager = RestJpaLifecycleProvider.entityManager("messenger");
-		final BaseEntity entity = messengerManager.find(BaseEntity.class, identity);
+		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
 		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		final Message[] messages = entity.getMessagesCaused().toArray(new Message[0]);
 		Arrays.sort(messages);
