@@ -18,3 +18,11 @@ bin/
 
 libs/
 /bin1/
+
+src/de/sb/messenger/rest/AuctionService.java
+
+src/de/sb/messenger/rest/Authenticator.java
+
+src/de/sb/messenger/rest/EntityService.java
+
+src/de/sb/messenger/rest/PersonService.java

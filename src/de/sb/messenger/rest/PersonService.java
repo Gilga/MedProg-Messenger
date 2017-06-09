@@ -25,6 +25,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
+import com.mysql.fabric.Response;
+
 import de.sb.messenger.persistence.Address;
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
@@ -47,14 +49,16 @@ public class PersonService {
 	
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
-	public List<Person> getPeople (Long lowerID, Long upperID,
-			String email, Name name, Address address, Group group, Document avatar) { //Long avatarID
+	// benutze den vornamen und die unterelemente von addresse
+	public List<Person> getPeople (Long lowerCreationTimestamp, Long upperCreationTimestamp,
+			String email, Name name, Address address, Group group,int offset, int resultLength) { //Long avatarID
 		// search for passwordHash, author, peopleObserved, messenger?
 
 		final EntityManager em = EntityService.getEntityManager();
 
 		//Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
-
+		// optional pql query, angabe von offset und laenge fehlt
+		
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
 		Root<Person> e = cq.from(Person.class);
@@ -63,53 +67,63 @@ public class PersonService {
 		List<Predicate> predicates = new ArrayList<Predicate>();
 
 		// Adding predicates
-		Predicate p1 = cb.or(cb.isNull(cb.literal(lowerID)), cb.greaterThanOrEqualTo(e.get("identity"), lowerID));
-		Predicate p2 = cb.or(cb.isNull(cb.literal(upperID)), cb.lessThanOrEqualTo(e.get("identity"), upperID));
+		Predicate p1 = cb.or(cb.isNull(cb.literal(lowerCreationTimestamp)), cb.greaterThanOrEqualTo(e.get("identity"), lowerCreationTimestamp));
+		Predicate p2 = cb.or(cb.isNull(cb.literal(upperCreationTimestamp)), cb.lessThanOrEqualTo(e.get("identity"), upperCreationTimestamp));
 		Predicate p3 = cb.or(cb.isNull(cb.literal(email)), cb.equal(e.get("email"), email));
 		Predicate p4 = cb.or(cb.isNull(cb.literal(name)), cb.equal(e.get("name"), name));
 		Predicate p5 = cb.or(cb.isNull(cb.literal(address)), cb.equal(e.get("address"), address));
 		Predicate p6 = cb.or(cb.isNull(cb.literal(group)), cb.equal(e.get("groupAlias"), group));
-		Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)), cb.equal(e.get("avatarReference"), avatar));
+//		Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)), cb.equal(e.get("avatarReference"), avatar));
 
-		predicates.add(cb.and(p1, p2, p3, p4, p5, p6, p7));
+		predicates.add(cb.and(p1, p2, p3, p4, p5, p6));
 
 		cq.select(e).where(predicates.toArray(new Predicate[] {}));
 
+		// schleife ueber jede id, use second level cache, listen ordnung ist nicht garantiert, sortieren anch einem belieben kriterium
+		// beim iterieren ein array generieren und die objekte sortiert mit der id hinzufuegen\
+		// bei jedem listen objekt alles sortieren und ein array generieren
 		return em.createQuery(cq).getResultList();
 	}
 	
-	@SuppressWarnings("unused")
 	@PUT
-	public long createPerson (final Person template, @HeaderParam("Set-Password") final String password) {
+	public long updatePerson (final Person template, @HeaderParam("Set-Password") final String password) {
 		final EntityManager em = EntityService.getEntityManager();
 		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
-		boolean update = false;
+		boolean update = template.getIdentiy() != 0;
 		Person person = null;
-		long identity = template.getIdentiy();
 		
-		if(identity == 0) person = new Person(template.getEmail(), template.getAvatar());
-		else {
-			person = getPerson(identity);
+		// avatar ueber die default id aus der datenbank holem em.find(Typ, ID)
+		if(!update){
+			person = new Person(template.getEmail(), template.getAvatar());
+		} else {
+			person = em.find(Person.class, template.getIdentiy());
+
+			if (person == null)
+				throw new ClientErrorException(NOT_FOUND);
+		}			
 			
-			// clear Cache
-			emf.getCache().evict(Person.class, person.getIdentiy());
-			
-			person.setAvatar(template.getAvatar());
-			person.setEmail(template.getEmail());
-			person.setGroup(template.getGroup());
-			update = true;
+		person.setEmail(template.getEmail());
+		person.setGroup(template.getGroup());
+		
+		person.getName().setGiven(template.getName().getGiven());
+		
+		if(update) {
+			em.flush();
+		} else {
+			em.persist(person);
 		}
 		
-		if (person == null)
-			throw new ClientErrorException(NOT_FOUND);
+		em.getTransaction().commit();
+		// clear Cache
+		emf.getCache().evict(Person.class, person.getIdentiy());
 		
 		if(password.equals("") != true)
 			person.setPasswordHash(Person.passwordHash(password));
 		
 		EntityService.update(em,!update ? person : null);
-		
-		return identity;
+
+		return person.getIdentiy();
 	}
 	
 	@GET
@@ -152,14 +166,16 @@ public class PersonService {
 	@GET
 	@Path("{identity}/avatar")
 	@Produces({ MEDIA_TYPE_WILDCARD })
-	public Document getAvatar (@PathParam("identity") final long identity) {
+	public Response getAvatar (@PathParam("identity") final long identity) {
+		// return avatar und response type
 		return getPerson(identity).getAvatar();
 	}
 	
 	// TODO
 	@PUT
 	@Path("{identity}/peopleObserved")
-	public void updatePerson (@PathParam("identity") final long identity, Set<Long> peopleObservedIdentities) {
+	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
+		
 		final EntityManager em = EntityService.getEntityManager();
 		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
@@ -176,12 +192,14 @@ public class PersonService {
 	@PUT
 	@Path("{identity}/avatar")
 	@Consumes(MEDIA_TYPE_WILDCARD)
-	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity, @HeaderParam("Content-type") String mediaType, byte[] content) {
+	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @HeaderParam("Content-type") String mediaType, byte[] content) {
 		Person owner = PersonService.getRequester(authentication);
 		final EntityManager em = EntityService.getEntityManager();
 		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		//HTTP request body, 
 
+		// ist das medium schon vorhanden, contenhash berechnen, query in document, document mit hash vorhanden id zurueckgeben ! daten verbinden: committen
+		// wenn nicht vorhanden ein neues document erstellen in die datenbank committen, dann die relation zur person aendern und das committen
 		Document avatar;
 		if(content == null || content.length==0 ){
 			avatar = em.find(Document.class, 1);
@@ -199,6 +217,7 @@ public class PersonService {
 		
 		owner.setAvatar(avatar);
 		
+		// id des documents returnen !
 		EntityService.update(em,null);
 	}
 }
