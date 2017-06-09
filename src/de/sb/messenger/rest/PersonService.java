@@ -57,12 +57,12 @@ public class PersonService {
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public List<Person> getPeople (Long lowerID, Long upperID,
-			String email, Name name, Address address, Group group, Long avatarID) {
+			String email, Name name, Address address, Group group, Document avatar) { //Long avatarID
 		// search for passwordHash, author, peopleObserved, messenger?
 
 		final EntityManager em = EntityService.getEntityManager();
 
-		Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
+		//Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
 
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
