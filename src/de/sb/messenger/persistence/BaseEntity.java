@@ -71,7 +71,6 @@ public class BaseEntity implements Comparable<BaseEntity> {
 		return creationTimestamp;
 	}
 
-
 	public Set <Message> getMessagesCaused() {
 		return messagesCaused;
 	}

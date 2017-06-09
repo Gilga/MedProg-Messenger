@@ -9,7 +9,6 @@ import javax.validation.constraints.Size;
 @Embeddable 
 public class Address {
 
-	
 	@Column(name="street", updatable = false, insertable = true)
 	@Size(min = 0, max = 63) @Pattern(regexp = "([A-Za-z0-9/. -]{2,} [0-9a-z]+)")
 	private String street;
@@ -21,7 +20,6 @@ public class Address {
 	@Column(name="city", nullable = false, updatable = false, insertable = true)
 	@NotNull @Size(min = 1, max = 63) @Pattern(regexp = "([A-Za-z/ -]{2,})")
 	private String city;
-
 	
 	public Address() {
 		this.street = null;

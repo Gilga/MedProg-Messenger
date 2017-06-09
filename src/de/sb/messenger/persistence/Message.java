@@ -14,6 +14,7 @@ import javax.validation.constraints.Size;
 @DiscriminatorValue(value = "Message")
 @PrimaryKeyJoinColumn(name="messageIdentity")
 public class Message extends BaseEntity {
+	
 	@ManyToOne
 	@JoinColumn(name="authorReference", nullable = false)
 	private Person author;
