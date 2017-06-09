@@ -5,14 +5,21 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -23,10 +30,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 
+import de.sb.messenger.persistence.Address;
 import de.sb.messenger.persistence.BaseEntity;
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
+import de.sb.messenger.persistence.Name;
 import de.sb.messenger.persistence.Person;
+import de.sb.messenger.persistence.Person.Group;
 import de.sb.toolbox.Copyright;
 import de.sb.toolbox.net.RestCredentials;
 
@@ -46,14 +56,33 @@ public class PersonService {
 	
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
-	public List<Person> getPeople (List<Predicate> criteria) {
+	public List<Person> getPeople (Long lowerID, Long upperID,
+			String email, Name name, Address address, Group group, Long avatarID) {
+		// search for passwordHash, author, peopleObserved, messenger?
+		
 		final EntityManager em = EntityService.getEntityManager();
+		
+	    Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
 
 		CriteriaBuilder cb = em.getCriteriaBuilder();
 		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
-		//Root<Person> e = cq.from(Person.class);
-		//CriteriaQuery<Person> all = cq.select(e);
-		if(criteria.size() > 0) cq.where(criteria.toArray(new Predicate[]{}));
+		Root<Person> e = cq.from(Person.class);
+	    
+		//Constructing list of parameters
+	    List<Predicate> predicates = new ArrayList<Predicate>();
+
+	    //Adding predicates
+	    Predicate p1 = cb.or(cb.isNull(cb.literal(lowerID)),cb.greaterThanOrEqualTo(e.get("identity"),lowerID));
+	    Predicate p2 = cb.or(cb.isNull(cb.literal(upperID)),cb.lessThanOrEqualTo(e.get("identity"),upperID));
+	    Predicate p3 = cb.or(cb.isNull(cb.literal(email)),cb.equal(e.get("email"),email));
+	    Predicate p4 = cb.or(cb.isNull(cb.literal(name)),cb.equal(e.get("name"),name));
+	    Predicate p5 = cb.or(cb.isNull(cb.literal(address)),cb.equal(e.get("address"),address));
+	    Predicate p6 = cb.or(cb.isNull(cb.literal(group)),cb.equal(e.get("groupAlias"),group));
+	    Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)),cb.equal(e.get("avatarReference"),avatar));
+	    
+	    predicates.add(cb.and(p1,p2,p3,p4,p5,p6,p7));
+		
+	    cq.select(e).where(predicates.toArray(new Predicate[]{}));
 
 		return em.createQuery(cq).getResultList();
 	}
@@ -152,6 +181,7 @@ public class PersonService {
 		emf.getCache().evict(Person.class, person.getIdentiy());
 		
 		// ...
+		
 		em.merge(person);
 	}
 	
