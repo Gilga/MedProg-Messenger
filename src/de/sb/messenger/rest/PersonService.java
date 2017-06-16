@@ -6,11 +6,15 @@ import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+import javax.persistence.TypedQuery;
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
@@ -24,13 +28,11 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.ResponseBuilder;
 
-import com.mysql.fabric.Response;
-
-import de.sb.messenger.persistence.Address;
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
-import de.sb.messenger.persistence.Name;
 import de.sb.messenger.persistence.Person;
 import de.sb.messenger.persistence.Person.Group;
 import de.sb.toolbox.Copyright;
@@ -40,62 +42,71 @@ import de.sb.toolbox.net.RestCredentials;
 @Copyright(year=2013, holders="Sascha Baumeister")
 public class PersonService {
 
-	static EntityManagerFactory messengerManagerFactory = null;
-	
-	static private EntityManagerFactory getEntityManagerFactory(EntityManager em) {
-		if(messengerManagerFactory==null) messengerManagerFactory=em.getEntityManagerFactory();
-		return messengerManagerFactory;
-	}
-	
 	@GET
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
-	// benutze den vornamen und die unterelemente von addresse
-	public List<Person> getPeople (Long lowerCreationTimestamp, Long upperCreationTimestamp,
-			String email, Name name, Address address, Group group,int offset, int resultLength) { //Long avatarID
-		// search for passwordHash, author, peopleObserved, messenger?
-
-		final EntityManager em = EntityService.getEntityManager();
-
-		//Document avatar = avatarID == null ? null : em.find(Document.class, avatarID);
-		// optional pql query, angabe von offset und laenge fehlt
+	public List<Person> getPeople (
+			int offset, int limit,
+			Long lowerCreationTimestamp, Long upperCreationTimestamp,
+			Group group, String email,
+			String givenName, String familyName,
+			String city, String postCode, String street) {
 		
-		CriteriaBuilder cb = em.getCriteriaBuilder();
-		CriteriaQuery<Person> cq = cb.createQuery(Person.class);
-		Root<Person> e = cq.from(Person.class);
-
-		// Constructing list of parameters
-		List<Predicate> predicates = new ArrayList<Predicate>();
-
-		// Adding predicates
-		Predicate p1 = cb.or(cb.isNull(cb.literal(lowerCreationTimestamp)), cb.greaterThanOrEqualTo(e.get("identity"), lowerCreationTimestamp));
-		Predicate p2 = cb.or(cb.isNull(cb.literal(upperCreationTimestamp)), cb.lessThanOrEqualTo(e.get("identity"), upperCreationTimestamp));
-		Predicate p3 = cb.or(cb.isNull(cb.literal(email)), cb.equal(e.get("email"), email));
-		Predicate p4 = cb.or(cb.isNull(cb.literal(name)), cb.equal(e.get("name"), name));
-		Predicate p5 = cb.or(cb.isNull(cb.literal(address)), cb.equal(e.get("address"), address));
-		Predicate p6 = cb.or(cb.isNull(cb.literal(group)), cb.equal(e.get("groupAlias"), group));
-//		Predicate p7 = cb.or(cb.isNull(cb.literal(avatar)), cb.equal(e.get("avatarReference"), avatar));
-
-		predicates.add(cb.and(p1, p2, p3, p4, p5, p6));
-
-		cq.select(e).where(predicates.toArray(new Predicate[] {}));
-
-		// schleife ueber jede id, use second level cache, listen ordnung ist nicht garantiert, sortieren anch einem belieben kriterium
-		// beim iterieren ein array generieren und die objekte sortiert mit der id hinzufuegen\
-		// bei jedem listen objekt alles sortieren und ein array generieren
-		return em.createQuery(cq).getResultList();
+		final EntityManager em = EntityService.getEntityManager();
+		
+		final String pql = "select p.identity from Person as p where "
+		+"(:lowerCreationTimestamp is null or p.creationTimestamp >= :lowerCreationTimestamp)"
+		+"and (:upperCreationTimestamp is null or p.creationTimestamp <= :upperCreationTimestamp)"
+		+"and (:groupAlias is null or p.groupAlias = :groupAlias)"
+		+"and (:email is null or p.email = :email)"
+		+"and (:givenName is null or p.givenName = :givenName)"
+		+"and (:familyName is null or p.familyName = :familyName)"
+		+"and (:city is null or p.city = :city)"
+		+"and (:postCode is null or p.postCode = :postCode)"
+		+"and (:street is null or p.street = :street)"
+		+" limit :limit offset :offset"
+		;
+	
+		TypedQuery<Long> query = em.createQuery(pql, Long.class);
+		query.setParameter("limit", limit);
+		query.setParameter("offset", offset);
+		query.setParameter("lowerCreationTimestamp", lowerCreationTimestamp);
+		query.setParameter("upperCreationTimestamp", upperCreationTimestamp);
+		query.setParameter("groupAlias", group);
+		query.setParameter("email", email);
+		query.setParameter("givenName", givenName);
+		query.setParameter("familyName", familyName);
+		query.setParameter("city", email);
+		query.setParameter("postCode", email);
+		query.setParameter("street", email);
+		
+		Long[] ids = query.getResultList().toArray(new Long[]{});
+		Arrays.sort( ids ); // sort array
+		
+		List<Person> persons = Collections.emptyList();
+		
+		final EntityManagerFactory emf = em.getEntityManagerFactory();
+		
+		for (Long id : ids)
+		{
+			Person person = em.find(Person.class, id);
+			if(person!=null) {
+				persons.add(person);
+				emf.getCache().evict(Person.class, person.getIdentiy());
+			}
+		};
+		
+		return persons;
 	}
 	
 	@PUT
 	public long updatePerson (final Person template, @HeaderParam("Set-Password") final String password) {
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory(em);
 		
 		boolean update = template.getIdentiy() != 0;
 		Person person = null;
 		
-		// avatar ueber die default id aus der datenbank holem em.find(Typ, ID)
 		if(!update){
-			person = new Person(template.getEmail(), template.getAvatar());
+			person = new Person(template.getEmail(), em.find(Document.class, 1)); // template.getAvatar().getIdentiy()
 		} else {
 			person = em.find(Person.class, template.getIdentiy());
 
@@ -107,21 +118,20 @@ public class PersonService {
 		person.setGroup(template.getGroup());
 		
 		person.getName().setGiven(template.getName().getGiven());
+		person.getName().setFamily(template.getName().getFamily());
 		
-		if(update) {
-			em.flush();
-		} else {
-			em.persist(person);
-		}
-		
-		em.getTransaction().commit();
-		// clear Cache
-		emf.getCache().evict(Person.class, person.getIdentiy());
+		person.getAddress().setCity(template.getAddress().getCity());
+		person.getAddress().setPostcode(template.getAddress().getPostcode());
+		person.getAddress().setStreet(template.getAddress().getStreet());
 		
 		if(password.equals("") != true)
 			person.setPasswordHash(Person.passwordHash(password));
 		
-		EntityService.update(em,!update ? person : null);
+		// insert / update
+		EntityService.update(em, update ? person : null);
+		
+		// clear Cache
+		em.getEntityManagerFactory().getCache().evict(Person.class, person.getIdentiy());
 
 		return person.getIdentiy();
 	}
@@ -167,57 +177,72 @@ public class PersonService {
 	@Path("{identity}/avatar")
 	@Produces({ MEDIA_TYPE_WILDCARD })
 	public Response getAvatar (@PathParam("identity") final long identity) {
-		// return avatar und response type
-		return getPerson(identity).getAvatar();
+		Document avatar = getPerson(identity).getAvatar();
+		ResponseBuilder rb = Response.ok(avatar.getContent(), avatar.getContentType());
+		return rb.build();	// return avatar und response type
 	}
 	
-	// TODO
 	@PUT
 	@Path("{identity}/peopleObserved")
 	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
-		
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory(em);
+
+		// remove dublicates
+		Set<Long> plist = new HashSet<Long>();
+		for(long id : peopleObservedIdentities){
+			if(!plist.contains(id)) plist.add(id);
+		}
 		
 		Person person = getPerson(identity);
+		Set<Person> list = person.getPeopleObserved();
+		
+		for(long id : peopleObservedIdentities){
+			Person p = em.find(Person.class, id);
+			if(list.contains(id)) list.remove(p); // remove if id is in list
+			else list.add(p); // add if id is not in list
+		}
 
-		// clear Cache
-		emf.getCache().evict(Person.class, person.getIdentiy());
-		
-		// ...
-		
 		EntityService.update(em,null);
+		
+		// clear Cache
+		em.getEntityManagerFactory().getCache().evict(Person.class, person.getIdentiy());
 	}
 	
 	@PUT
 	@Path("{identity}/avatar")
 	@Consumes(MEDIA_TYPE_WILDCARD)
-	public void updateAvatar (@HeaderParam("Authorization") final String authentication, @HeaderParam("Content-type") String mediaType, byte[] content) {
+	public long updateAvatar (@HeaderParam("Authorization") final String authentication, @HeaderParam("Content-type") String mediaType, byte[] content) {
 		Person owner = PersonService.getRequester(authentication);
 		final EntityManager em = EntityService.getEntityManager();
-		final EntityManagerFactory emf = getEntityManagerFactory(em);
-		//HTTP request body, 
 
-		// ist das medium schon vorhanden, contenhash berechnen, query in document, document mit hash vorhanden id zurueckgeben ! daten verbinden: committen
-		// wenn nicht vorhanden ein neues document erstellen in die datenbank committen, dann die relation zur person aendern und das committen
-		Document avatar;
-		if(content == null || content.length==0 ){
-			avatar = em.find(Document.class, 1);
+		boolean insert = true;
+		long id  = 1; // default value
+		
+		if(! (content == null || content.length==0) ) {
+			byte[] contentHash = Document.mediaHash(content);
 			
-			// clear Cache
-			emf.getCache().evict(Document.class, 1);
-			
-			if (avatar == null) throw new NotFoundException();
+			final String pql = "select d.identity from Document as d where d.contentHash = :contentHash";
+			TypedQuery<Long> query = em.createQuery(pql, Long.class);
+			query.setParameter("contentHash", contentHash);
+			id = query.getSingleResult();
 		}
-		else {
-			 //@Context HttpHeaders hh
-			//hh.getHeaderString("Content-type")
-			avatar = new Document(mediaType,content);
+		
+		Document avatar = em.find(Document.class, id);
+
+		if(avatar==null) {
+			// content can be empty!
+			avatar = new Document(mediaType, content);
+			insert=true;
 		}
 		
 		owner.setAvatar(avatar);
 		
-		// id des documents returnen !
-		EntityService.update(em,null);
+		EntityService.update(em,insert?avatar:null,null);
+		
+		// clear Cache
+		em.getEntityManagerFactory().getCache().evict(Document.class, avatar.getIdentiy());
+		
+		// return new avatar id
+		return avatar.getIdentiy();
 	}
 }
