@@ -46,22 +46,22 @@ public class EntityService {
 		return RestJpaLifecycleProvider.entityManager("messenger");
 	}
 	
-	static public void update(EntityManager em, Object obj) {
+	static public void update(EntityManager em, BaseEntity obj) {
 		// update
 		EntityTransaction et = em.getTransaction();
 		et.begin();
-		if(obj != null) em.persist(obj); // insert
+		if(obj.getIdentiy() == 0) em.persist(obj); // insert
 		else em.flush(); // update
 		et.commit();
 	}
 	
-	static public void update(EntityManager em, Object obj1, Object obj2) {
+	static public void update(EntityManager em, BaseEntity obj1, BaseEntity obj2) {
 		// update
 		EntityTransaction et = em.getTransaction();
 		et.begin();
-		if(obj1 != null) em.persist(obj1); // insert
-		if(obj2 != null) em.persist(obj2); // insert
-		if(obj1 == null || obj2 == null ) em.flush(); // update
+		if(obj1.getIdentiy() == 0) em.persist(obj1); // insert
+		if(obj2.getIdentiy() == 0) em.persist(obj2); // insert
+		if((obj1.getIdentiy() != 0) || (obj2.getIdentiy() != 0) ) em.flush(); // update
 		et.commit();
 	}
 
