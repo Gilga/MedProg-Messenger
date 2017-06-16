@@ -207,22 +207,29 @@ public class PersonService {
 		
 		final EntityManager em = EntityService.getEntityManager();
 
-		// remove dublicates
-		Set<Long> plist = new HashSet<Long>();
+		Set<Person> people = new HashSet<Person>();
 		for(long id : peopleObservedIdentities){
-			if(!plist.contains(id)) plist.add(id);
+			
+			// check if already in list - remove dublicates
+			boolean found = false;
+			for(Person p : people){
+				if(p.getIdentiy() == id) { found=true; break; }
+			}
+			
+			if(!found) {
+				Person p = em.find(Person.class, id);
+				if(p!=null) people.add(p);
+			}
 		}
+		
+		Person[] result = people.toArray(new Person[]{});
+		Arrays.sort( result ); // sort array
 		
 		Person person = getPerson(identity);
 		Set<Person> list = person.getPeopleObserved();
 		
-		for(long id : peopleObservedIdentities){
-			Person p = em.find(Person.class, id);
-			if(list.contains(id)) list.remove(p); // remove if id is in list
-			else list.add(p); // add if id is not in list
-		}
-		
-		// what if peopleObservedIdentities.size() == 0?
+		list.clear();
+		for(Person p : result){ list.add(p); }
 
 		EntityService.update(em,person);
 		
