@@ -3,6 +3,7 @@ package de.sb.messenger.test.rest;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
+import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML_TYPE;
 import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Person;
 import de.sb.messenger.persistence.Person.Group;
+import de.sb.messenger.rest.EntityService;
 
 public class PersonServiceTest extends ServiceTest {
 	
@@ -138,7 +140,7 @@ public class PersonServiceTest extends ServiceTest {
 		person = entityManager.find(Person.class, person.getIdentiy());
 
 		
-		// put a person
+		// PUT a new person
 		Response res =  userTargetValid.request()
 				.header(authorizationHeaderName, authorizationHeaderValue).header("Set-password", "Password")
 				.put(Entity.json(person));
@@ -146,17 +148,25 @@ public class PersonServiceTest extends ServiceTest {
 		assertTrue(res.getStatus() == 200);
 		//
 		Long resIdentity = res.readEntity(Long.class);
-		// assertEquals(???,resIdentity)
+		// assertEquals(???,resIdentity) what value would this person have 
 		
 		WebTarget userTargetPut = this.newWebTarget("john", "john").path("people/"+resIdentity);
 		
-		//get person 
+		//GET person 
 		Person personPut = userTargetPut.request()
 				.header(authorizationHeaderName, authorizationHeaderValue).get(Person.class);
 		assertEquals(person.getIdentiy(),personPut.getIdentiy());
 		
 		
+		person.getName().setFamily("Schroeder");
+		EntityService.update(entityManager, person);
+		//UPDATE person
+		 res =  userTargetValid.request()
+				.header(authorizationHeaderName, authorizationHeaderValue).header("Set-password", "Password").accept(TEXT_PLAIN)
+				.put(Entity.json(person));
 		
+		// assertEquals(,res.readEntity(Long.class));
+		 assertEquals(TEXT_PLAIN_TYPE, res.getMediaType());
 	}
 	
 	//https://dennis-xlc.gitbooks.io/restful-java-with-jax-rs-2-0-2rd-edition/en/part1/chapter8/building_and_invoking_requests.html
