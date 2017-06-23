@@ -17,6 +17,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
 import javax.ws.rs.PUT;
@@ -202,7 +203,7 @@ public class PersonService {
 	
 	@PUT
 	@Path("{identity}/peopleObserved")
-	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
+	public void updatePerson (@PathParam("identity") final long identity, @FormParam("peopleObservedIDs") long[] peopleObservedIdentities) {
 		if(peopleObservedIdentities == null) throw new ClientErrorException(BAD_REQUEST);
 		
 		final EntityManager em = EntityService.getEntityManager();
