@@ -3,12 +3,9 @@ package de.sb.messenger.rest;
 import static de.sb.messenger.persistence.Person.Group.ADMIN;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
-import static javax.ws.rs.core.Response.Status.CONFLICT;
-import static javax.ws.rs.core.Response.Status.FORBIDDEN;
-import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.*;
 import java.util.Arrays;
 import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
 import javax.persistence.RollbackException;
@@ -16,10 +13,10 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.HeaderParam;
-import javax.ws.rs.NotFoundException;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+
 import de.sb.messenger.persistence.BaseEntity;
 import de.sb.messenger.persistence.Message;
 import de.sb.messenger.persistence.Person;
@@ -81,9 +78,10 @@ public class EntityService {
 	@Path("{identity}")
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public BaseEntity queryIdentity (@HeaderParam("Authorization") final String authentication, @PathParam("identity") final long identity) {
+		//if(authentication is malformed) throw new ClientErrorException(Status.BAD_REQUEST); // HTTP 400
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
-		if (entity == null) throw new NotFoundException();
+		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
 		return entity;
 	}
 
@@ -110,18 +108,18 @@ public class EntityService {
 		final Person requester = Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
 		final EntityManager em = getEntityManager();
-		if (requester.getGroup() != ADMIN) throw new ClientErrorException(FORBIDDEN);
+		if (requester.getGroup() != ADMIN) throw new ClientErrorException(Status.FORBIDDEN);
 		em.getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
 
 		// check if getReference() works once https://bugs.eclipse.org/bugs/show_bug.cgi?id=460063 is fixed.
 		final BaseEntity entity = em.find(BaseEntity.class, identity);
-		if (entity == null) throw new ClientErrorException(NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
 		em.remove(entity);
 
 		try {
 			em.getTransaction().commit();
 		} catch (final RollbackException exception) {
-			throw new ClientErrorException(CONFLICT);
+			throw new ClientErrorException(Status.CONFLICT);
 		} finally {
 			em.getTransaction().begin();
 		}
@@ -149,7 +147,7 @@ public class EntityService {
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
 		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
-		if (entity == null) throw new ClientErrorException(NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
 		final Message[] messages = entity.getMessagesCaused().toArray(new Message[0]);
 		Arrays.sort(messages);
 		return messages;

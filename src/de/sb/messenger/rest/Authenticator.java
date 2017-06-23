@@ -2,7 +2,11 @@ package de.sb.messenger.rest;
 
 import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
+import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response.Status;
+
 import de.sb.messenger.persistence.Person;
 import de.sb.toolbox.net.HttpCredentials;
 
@@ -23,20 +27,33 @@ public interface Authenticator {
 	 *         thread is not open
 	 * @throws NullPointerException (HTTP 500) if the given credentials are {@code null}
 	 */
-	static public Person authenticate (final HttpCredentials.Basic credentials) throws NotAuthorizedException, PersistenceException, IllegalStateException, NullPointerException {
-		final String pql = "select p from Person as p where p.email = :email"; // and p.password = :password
-
-		String email = credentials.getUsername(); // username == email?
-		byte[] passwordHash = Person.passwordHash(credentials.getPassword());
+	static public Person authenticate (final HttpCredentials.Basic credentials) {
+		try {
+			final String pql = "select p from Person as p where p.email = :email"; // and p.password = :password
 	
-		TypedQuery<Person> query = EntityService.getEntityManager().createQuery(pql, Person.class);
-		query.setParameter("email", email);
-		//sql passowrd check: pql+=" and p.password = :password"; query.setParameter("password", passwordHash);
-		Person person = query.getSingleResult();
+			String email = credentials.getUsername(); // username == email?
+			byte[] passwordHash = Person.passwordHash(credentials.getPassword());
 		
-		if(person != null && person.getPasswordHash() != passwordHash){	person = null; }
-		if(person == null) throw new NotAuthorizedException("Basic");
-		
-		return person;
+			TypedQuery<Person> query = EntityService.getEntityManager().createQuery(pql, Person.class);
+			query.setParameter("email", email);
+			//sql passowrd check: pql+=" and p.password = :password"; query.setParameter("password", passwordHash);
+			Person person = query.getSingleResult();
+			
+			if(person != null && person.getPasswordHash() != passwordHash){	person = null; }
+			if(person == null) throw new ClientErrorException(Status.UNAUTHORIZED); // HTTP 401, new NotAuthorizedException("Basic");
+			
+			return person;
+			
+		} catch(NotFoundException e){
+			throw new ClientErrorException(Status.NOT_FOUND); // HTTP 404
+		} catch(PersistenceException e){
+			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+		} catch(IllegalStateException e){
+			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+		} catch(NullPointerException e){
+			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+		} catch(Exception e){
+			throw e;
+		}
 	}
 }
