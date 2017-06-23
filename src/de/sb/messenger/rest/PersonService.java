@@ -203,7 +203,8 @@ public class PersonService {
 	
 	@PUT
 	@Path("{identity}/peopleObserved")
-	public void updatePerson (@PathParam("identity") final long identity, @FormParam("peopleObservedIDs") long[] peopleObservedIdentities) {
+	@Consumes({ APPLICATION_JSON, APPLICATION_XML })
+	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
 		if(peopleObservedIdentities == null) throw new ClientErrorException(BAD_REQUEST);
 		
 		final EntityManager em = EntityService.getEntityManager();
