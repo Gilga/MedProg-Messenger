@@ -4,7 +4,8 @@ import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
-import static javax.ws.rs.core.Response.*;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -88,7 +89,7 @@ public class PersonService {
 		{
 			Person person = em.find(Person.class, id);
 			
-			if (person == null)	throw new ClientErrorException(Status.NOT_FOUND);
+			if (person == null)	throw new ClientErrorException(NOT_FOUND);
 			
 			people.add(person);
 		};
@@ -114,7 +115,7 @@ public class PersonService {
 			person = em.find(Person.class, template.getIdentiy());
 
 			if (person == null)
-				throw new ClientErrorException(Status.NOT_FOUND);
+				throw new ClientErrorException(NOT_FOUND);
 		}			
 			
 		person.setEmail(template.getEmail());
@@ -153,7 +154,7 @@ public class PersonService {
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Person getPerson (@PathParam("identity") final long identity) {
 		final Person entity = EntityService.getEntityManager().find(Person.class, identity);
-		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		return entity;
 	}
 	
@@ -203,7 +204,7 @@ public class PersonService {
 	@Path("{identity}/peopleObserved")
 	@Consumes({ APPLICATION_JSON, APPLICATION_XML })
 	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
-		if(peopleObservedIdentities == null) throw new ClientErrorException(Status.BAD_REQUEST);
+		if(peopleObservedIdentities == null) throw new ClientErrorException(BAD_REQUEST);
 		
 		final EntityManager em = EntityService.getEntityManager();
 
@@ -242,7 +243,7 @@ public class PersonService {
 	@Consumes(MEDIA_TYPE_WILDCARD)
 	@Produces({ TEXT_PLAIN })
 	public long updateAvatar (@HeaderParam("Authorization") final String authentication, @HeaderParam("Content-type") String mediaType, byte[] content) {
-		if(content == null || content.length==0) throw new ClientErrorException(Status.BAD_REQUEST);
+		if(content == null || content.length==0) throw new ClientErrorException(BAD_REQUEST);
 		
 		Person owner = PersonService.getRequester(authentication);
 		final EntityManager em = EntityService.getEntityManager();
@@ -261,10 +262,10 @@ public class PersonService {
 		}
 		else if(ids.size() == 1){ // update
 			avatar = em.find(Document.class, ids.get(0));
-			if(avatar == null) throw new ClientErrorException(Status.NOT_FOUND);
+			if(avatar == null) throw new ClientErrorException(NOT_FOUND);
 		}
 		else {
-			throw new ClientErrorException(Status.BAD_REQUEST); //NOT_IMPLEMENTED or METHOD_NOT_ALLOWED?
+			throw new ClientErrorException(BAD_REQUEST); //NOT_IMPLEMENTED or METHOD_NOT_ALLOWED?
 		}
 
 		owner.setAvatar(avatar);

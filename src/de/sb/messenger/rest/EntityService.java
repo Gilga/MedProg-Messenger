@@ -3,7 +3,10 @@ package de.sb.messenger.rest;
 import static de.sb.messenger.persistence.Person.Group.ADMIN;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
-import static javax.ws.rs.core.Response.*;
+import static javax.ws.rs.core.Response.Status.CONFLICT;
+import static javax.ws.rs.core.Response.Status.FORBIDDEN;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+
 import java.util.Arrays;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
@@ -81,7 +84,7 @@ public class EntityService {
 		//if(authentication is malformed) throw new ClientErrorException(Status.BAD_REQUEST); // HTTP 400
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
-		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		return entity;
 	}
 
@@ -108,18 +111,18 @@ public class EntityService {
 		final Person requester = Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
 		final EntityManager em = getEntityManager();
-		if (requester.getGroup() != ADMIN) throw new ClientErrorException(Status.FORBIDDEN);
+		if (requester.getGroup() != ADMIN) throw new ClientErrorException(FORBIDDEN);
 		em.getEntityManagerFactory().getCache().evict(BaseEntity.class, identity);
 
 		// check if getReference() works once https://bugs.eclipse.org/bugs/show_bug.cgi?id=460063 is fixed.
 		final BaseEntity entity = em.find(BaseEntity.class, identity);
-		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		em.remove(entity);
 
 		try {
 			em.getTransaction().commit();
 		} catch (final RollbackException exception) {
-			throw new ClientErrorException(Status.CONFLICT);
+			throw new ClientErrorException(CONFLICT);
 		} finally {
 			em.getTransaction().begin();
 		}
@@ -147,7 +150,7 @@ public class EntityService {
 		Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 
 		final BaseEntity entity = getEntityManager().find(BaseEntity.class, identity);
-		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		final Message[] messages = entity.getMessagesCaused().toArray(new Message[0]);
 		Arrays.sort(messages);
 		return messages;

@@ -1,11 +1,14 @@
 package de.sb.messenger.rest;
 
+import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
+import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
+
 import javax.persistence.PersistenceException;
 import javax.persistence.TypedQuery;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response.Status;
 
 import de.sb.messenger.persistence.Person;
 import de.sb.toolbox.net.HttpCredentials;
@@ -40,18 +43,18 @@ public interface Authenticator {
 			Person person = query.getSingleResult();
 			
 			if(person != null && person.getPasswordHash() != passwordHash){	person = null; }
-			if(person == null) throw new ClientErrorException(Status.UNAUTHORIZED); // HTTP 401, new NotAuthorizedException("Basic");
+			if(person == null) throw new ClientErrorException(UNAUTHORIZED); // HTTP 401, new NotAuthorizedException("Basic");
 			
 			return person;
 			
 		} catch(NotFoundException e){
-			throw new ClientErrorException(Status.NOT_FOUND); // HTTP 404
+			throw new ClientErrorException(NOT_FOUND); // HTTP 404
 		} catch(PersistenceException e){
-			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+			throw new ClientErrorException(INTERNAL_SERVER_ERROR); // HTTP 500
 		} catch(IllegalStateException e){
-			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+			throw new ClientErrorException(INTERNAL_SERVER_ERROR); // HTTP 500
 		} catch(NullPointerException e){
-			throw new ClientErrorException(Status.INTERNAL_SERVER_ERROR); // HTTP 500
+			throw new ClientErrorException(INTERNAL_SERVER_ERROR); // HTTP 500
 		} catch(Exception e){
 			throw e;
 		}

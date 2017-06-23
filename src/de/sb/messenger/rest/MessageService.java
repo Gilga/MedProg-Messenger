@@ -3,7 +3,7 @@ package de.sb.messenger.rest;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
-import static javax.ws.rs.core.Response.*;
+import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
@@ -36,7 +36,7 @@ public class MessageService {
 		final EntityManagerFactory emf = em.getEntityManagerFactory();
 		
 		BaseEntity subject = em.find(BaseEntity.class, subjectReference);
-		if (subject == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (subject == null) throw new ClientErrorException(NOT_FOUND);
 		
 		Message message  = new Message(author,subject,content);
 		
@@ -54,7 +54,7 @@ public class MessageService {
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Message getMessage (@PathParam("identity") final long identity) {
 		final Message entity = EntityService.getEntityManager().find(Message.class, identity);
-		if (entity == null) throw new ClientErrorException(Status.NOT_FOUND);
+		if (entity == null) throw new ClientErrorException(NOT_FOUND);
 		return entity;
 	}
 	
