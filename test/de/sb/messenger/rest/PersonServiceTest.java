@@ -1,4 +1,4 @@
-package de.sb.messenger.test.rest;
+package de.sb.messenger.rest;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE;
@@ -67,10 +67,10 @@ public class PersonServiceTest extends ServiceTest {
 
 	@Test
 	public void testIdentityQueries() {
-		 userTargetValidInes = this.newWebTarget("ines", "ines").path("people/1");
-		 userTargetInvalid = this.newWebTarget("ines", "password").path("people");
-		 userTargetValid = this.newWebTarget("ines", "ines").path("people");
-		 userTargetInvalidUser = this.newWebTarget("ines", "ines").path("/people/20");
+		 userTargetValidInes = newWebTarget("ines", "ines").path("people/1");
+		 userTargetInvalid = newWebTarget("ines", "password").path("people");
+		 userTargetValid = newWebTarget("ines", "ines").path("people");
+		 userTargetInvalidUser = newWebTarget("ines", "ines").path("/people/20");
 		
 		Response res = userTargetValid.request()
 				.header(authorizationHeaderName, authorizationHeaderValue).get();
@@ -100,7 +100,7 @@ public class PersonServiceTest extends ServiceTest {
 		// returns media type APPLICATION_XML_TYPE because APPLICATION_XMLis
 		// simply a string
 		assertEquals(APPLICATION_XML_TYPE, res.getMediaType());
-		//this.getWasteBasket().add(userTargetIvalidUser.get)
+		//.getWasteBasket().add(userTargetIvalidUser.ge)
 	}
 
 	@Test
@@ -126,29 +126,29 @@ public class PersonServiceTest extends ServiceTest {
 
 		// add to the DB
 
-		EntityTransaction transaction = entityManager.getTransaction();
-		transaction.begin();
-		entityManager.persist(doc);
-		transaction.commit();
-		transaction.begin();
-		entityManager.persist(person);
-		transaction.commit();
-		this.getWasteBasket().add(doc.getIdentiy());
-		this.getWasteBasket().add(person.getIdentiy());
-
-		transaction.begin();
-		person = entityManager.find(Person.class, person.getIdentiy());
+//		EntityTransaction transaction = entityManager.getTransaction();
+//		transaction.begin();
+//		entityManager.persist(doc);
+//		transaction.commit();
+//		transaction.begin();
+//		entityManager.persist(person);
+//		transaction.commit();
+//		this.getWasteBasket().add(doc.getIdentiy());
+//		this.getWasteBasket().add(person.getIdentiy());
+//
+//		transaction.begin();
+//		person = entityManager.find(Person.class, person.getIdentiy());
 
 		
 		// PUT a new person
 		Response res =  userTargetValid.request()
-				.header(authorizationHeaderName, authorizationHeaderValue).header("Set-password", "Password")
+				.header(authorizationHeaderName, authorizationHeaderValue).header("Set-password", "Password") //???
 				.put(Entity.json(person));
 		// successful put
 		assertTrue(res.getStatus() == 200);
 		//
-		Long resIdentity = res.readEntity(Long.class);
-		// assertEquals(???,resIdentity) what value would this person have 
+		long resIdentity = res.readEntity(Long.class).longValue();
+		assertEquals(0,resIdentity);
 		
 		WebTarget userTargetPut = this.newWebTarget("john", "john").path("people/"+resIdentity);
 		

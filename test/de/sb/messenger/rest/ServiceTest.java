@@ -1,4 +1,4 @@
-package de.sb.messenger.test.rest;
+package de.sb.messenger.rest;
 
 import static java.util.logging.Level.INFO;
 import java.io.BufferedReader;
@@ -37,7 +37,7 @@ import de.sb.toolbox.net.RestResponseCodeProvider;
  */
 @Copyright(year=2013, holders="Sascha Baumeister")
 public class ServiceTest {
-	static private final URI SERVICE_URI = URI.create("http://localhost:8001/e");
+	static private final URI SERVICE_URI = URI.create("http://localhost:8010/services");
 	static private HttpServer HTTP_CONTAINER = null;
 
 	private final Set<Long> wasteBasket = new HashSet<>();
@@ -101,7 +101,7 @@ public class ServiceTest {
 	static public void startEmbeddedHttpContainer () {
 		final ResourceConfig configuration = new ResourceConfig()
 			.packages(ServiceTest.class.getPackage().toString())
-			.register(MoxyJsonFeature.class)	// edit "network.http.accept.default" in Firefox's "about:config"
+			.register(MoxyJsonFeature.class)	// edit "network.http.accept.default" in Firefox's "about:config"//jaxon marschaling statt moxy
 			.register(MoxyXmlFeature.class)		// to make "application/json" preferable to "application/xml"
 			.register(EntityFilteringFeature.class);
 
