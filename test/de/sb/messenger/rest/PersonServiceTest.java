@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.sb.messenger.persistence.Document;
+import de.sb.messenger.persistence.Message;
 import de.sb.messenger.persistence.Person;
 import de.sb.messenger.persistence.Person.Group;
 
@@ -115,14 +116,15 @@ public class PersonServiceTest extends ServiceTest {
 
 		people = response.readEntity(new GenericType<List<Person>>() {
 		});
-		
+
 		assertEquals("John", people.get(0).getName().getGiven());
 		assertTrue(response.getStatus() == 200);
 
 	}
-/*
- * Test authentification and 
- */
+
+	/*
+	 * Test authentification and
+	 */
 	@Test
 	public void testIdentityQueries() {
 		userTargetValidInes = newWebTarget("ines", "ines").path("people/1");
@@ -151,7 +153,7 @@ public class PersonServiceTest extends ServiceTest {
 
 		res = userTargetValidInes.request().header(authorizationHeaderName, authorizationHeaderValue)
 				.accept(APPLICATION_JSON).get();
-		
+
 		// return media type APPLICATION_JSON
 		assertEquals(APPLICATION_JSON_TYPE, res.getMediaType());
 
@@ -197,22 +199,55 @@ public class PersonServiceTest extends ServiceTest {
 		assertTrue(response.getStatus() == 200);
 
 		this.getWasteBasket().add(idPerson);
+		// TODO authenticated requester
 
-//		WebTarget userTargetPut = this.newWebTarget("john", "john").path("people/" + resIdentity);
-//
-//		// GET person
-//		Person personPut = userTargetPut.request().header(authorizationHeaderName, authorizationHeaderValue)
-//				.get(Person.class);
-//		assertEquals(person.getIdentiy(), personPut.getIdentiy());
-//
-//		person.getName().setFamily("Schroeder");
-//		EntityService.update(entityManager, person);
-//		// UPDATE person
-//		res = userTargetValid.request().header(authorizationHeaderName, authorizationHeaderValue)
-//				.header("Set-password", "Password").accept(TEXT_PLAIN).put(Entity.json(person));
-//
-//		// assertEquals(,res.readEntity(Long.class));
-//		assertEquals(TEXT_PLAIN_TYPE, res.getMediaType());
+		/*
+		 * Test getPerson
+		 */
+		WebTarget webTargetInes = this.newWebTarget("ines", "ines").path("people/2");
+		response = webTargetInes.request().accept(APPLICATION_JSON).get();
+		Person returnedPerson = response.readEntity(Person.class);
+		assertTrue(response.getStatus() == 200);
+		assertEquals(2L, returnedPerson.getIdentiy());
+
+		/*
+		 * Test getMessagesAuthored
+		 */
+		
+		List<Message> msgs;		
+		WebTarget webTargetInesMsgs = this.newWebTarget("ines", "ines").path("people/2/messagesAuthored");
+		response = webTargetInesMsgs.request().accept(APPLICATION_JSON).get();		
+		msgs = response.readEntity(new GenericType<List<Message>>() {});	
+		assertNotEquals(0, msgs.size());
+		assertTrue(response.getStatus() == 200);
+	
+		/*
+		 * Test poepleObserving
+		 */
+		WebTarget webTargetInesPeopleObserving = this.newWebTarget("ines", "ines").path("people/2/peopleObserving");
+		List<Person>peopleObserving;		
+		response = webTargetInesPeopleObserving.request().accept(APPLICATION_JSON).get();		
+		peopleObserving = response.readEntity(new GenericType<List<Person>>() {});
+		
+		assertEquals(6, peopleObserving.size());
+		assertTrue(response.getStatus() == 200);
+		assertEquals(3L, peopleObserving.get(0).getIdentiy()); 
+		assertEquals(4L, peopleObserving.get(0).getIdentiy());
+		assertEquals(5L, peopleObserving.get(0).getIdentiy());
+		assertEquals(6L, peopleObserving.get(0).getIdentiy());
+		
+		/*
+		 * Test poepleObserved
+		 */
+		WebTarget webTargetInesPeopleObserved = this.newWebTarget("ines", "ines").path("people/2/peopleObserved");
+		List<Person>peopleObserved;		
+		response = webTargetInesPeopleObserved.request().accept(APPLICATION_JSON).get();		
+		peopleObserved = response.readEntity(new GenericType<List<Person>>() {});
+		
+		assertEquals(6, peopleObserved.size());
+		assertTrue(response.getStatus() == 200);
+		assertEquals(4L, peopleObserved.get(0).getIdentiy()); 
+		
 	}
 
 	// https://dennis-xlc.gitbooks.io/restful-java-with-jax-rs-2-0-2rd-edition/en/part1/chapter8/building_and_invoking_requests.html
