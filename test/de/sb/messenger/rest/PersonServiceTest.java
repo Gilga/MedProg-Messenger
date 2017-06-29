@@ -198,7 +198,7 @@ public class PersonServiceTest extends ServiceTest {
 		assertNotEquals(0, idPerson);
 		assertTrue(response.getStatus() == 200);
 
-		this.getWasteBasket().add(idPerson);
+		
 		// TODO authenticated requester
 
 		/*
@@ -222,7 +222,7 @@ public class PersonServiceTest extends ServiceTest {
 		assertTrue(response.getStatus() == 200);
 	
 		/*
-		 * Test poepleObserving
+		 * Test peopleObserving
 		 */
 		WebTarget webTargetInesPeopleObserving = this.newWebTarget("ines", "ines").path("people/2/peopleObserving");
 		List<Person>peopleObserving;		
@@ -237,7 +237,7 @@ public class PersonServiceTest extends ServiceTest {
 		assertEquals(6L, peopleObserving.get(0).getIdentiy());
 		
 		/*
-		 * Test poepleObserved
+		 * Test peopleObserved
 		 */
 		WebTarget webTargetInesPeopleObserved = this.newWebTarget("ines", "ines").path("people/2/peopleObserved");
 		List<Person>peopleObserved;		
@@ -248,6 +248,28 @@ public class PersonServiceTest extends ServiceTest {
 		assertTrue(response.getStatus() == 200);
 		assertEquals(4L, peopleObserved.get(0).getIdentiy()); 
 		
+		/*
+		 * Test put updatePerson peopleObserved
+		 */
+		//TODO is it correct?
+		WebTarget webTargetInesPutPeopleObserved = this.newWebTarget("ines", "ines").path("people/2/peopleObserved");	
+		response = webTargetInesPutPeopleObserved.request().accept(APPLICATION_JSON).put(Entity.json(person));		
+		peopleObserved = response.readEntity(new GenericType<List<Person>>() {});
+		Person testP = null;
+		for (Person p : peopleObserved) {
+			if(p.getName().getFamily() == "Smith"){
+				testP = p;
+			}
+		}
+		
+		assertEquals(7, peopleObserved.size());
+		assertTrue(testP.getName().getGiven() == "John");
+		assertTrue(response.getStatus() == 200);
+		
+		
+
+		
+		this.getWasteBasket().add(idPerson);
 	}
 
 	// https://dennis-xlc.gitbooks.io/restful-java-with-jax-rs-2-0-2rd-edition/en/part1/chapter8/building_and_invoking_requests.html
