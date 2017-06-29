@@ -6,6 +6,7 @@ import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML_TYPE;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN_TYPE;
+import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -266,8 +267,18 @@ public class PersonServiceTest extends ServiceTest {
 		assertTrue(testP.getName().getGiven() == "John");
 		assertTrue(response.getStatus() == 200);
 		
-		
+		/*
+		 * Test getAvatar
+		 */
+		WebTarget webTargetInesgetAvatar = this.newWebTarget("ines", "ines").path("people/2/avatar");	
+		response = webTargetInesgetAvatar.request().get();	
+		Document docum = response.readEntity(Document.class);
 
+		assertEquals(1, docum.getIdentiy());
+		assertEquals("image/jpeg", docum.getContentType());
+		assertEquals(MEDIA_TYPE_WILDCARD, response.getMediaType());
+		assertTrue(response.getStatus() == 200);
+		
 		
 		this.getWasteBasket().add(idPerson);
 	}
