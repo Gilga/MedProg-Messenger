@@ -49,10 +49,15 @@ public class EntityService {
 	static public void update(EntityManager em, BaseEntity obj) {
 		// update
 		EntityTransaction et = em.getTransaction();
-		et.begin();
+		//et.begin();
 		if(obj.getIdentiy() == 0) em.persist(obj); // insert
 		else em.flush(); // update
-		et.commit();
+	
+		try{		
+			et.commit();
+		} finally {
+			et.begin();
+		}
 	}
 	
 	static public void update(EntityManager em, BaseEntity obj1, BaseEntity obj2) {

@@ -39,22 +39,21 @@ public class PersonServiceTest extends ServiceTest {
 
 	public EntityManager entityManager;
 	protected static EntityManagerFactory EM_FACTORY;
-	WebTarget userTargetValidInes;
+	WebTarget userTarget;
 	WebTarget userTargetInvalid;
-	WebTarget userTargetValid;
-	WebTarget userTargetInvalidUser;
+	
 
 	@Before
 	public void setupBefore() {
-
-		username = "ines";
-		String password = "ines";
-		usernameAndPassword = username + ":" + password;
-		authorizationHeaderName = "Authorization";
-		authorizationHeaderValue = "Basic"
-				+ java.util.Base64.getEncoder().encodeToString(usernameAndPassword.getBytes());
-		EM_FACTORY = Persistence.createEntityManagerFactory("messenger");
-		entityManager = EM_FACTORY.createEntityManager();
+//
+//		username = "ines";
+//		String password = "ines";
+//		usernameAndPassword = username + ":" + password;
+//		authorizationHeaderName = "Authorization";
+//		authorizationHeaderValue = "Basic"
+//				+ java.util.Base64.getEncoder().encodeToString(usernameAndPassword.getBytes());
+//		EM_FACTORY = Persistence.createEntityManagerFactory("messenger");
+//		entityManager = EM_FACTORY.createEntityManager();
 
 	}
 
@@ -128,15 +127,13 @@ public class PersonServiceTest extends ServiceTest {
 	 */
 	@Test
 	public void testIdentityQueries() {
-		userTargetValidInes = newWebTarget("ines", "ines").path("people/2");
+		userTarget = newWebTarget("ines", "ines");
 		userTargetInvalid = newWebTarget("ines", "password").path("people");
-		userTargetValid = newWebTarget("ines", "ines").path("people");
-		userTargetInvalidUser = newWebTarget("ines", "ines").path("/people/20");
 
 		/*
 		 * Test getRequester
 		 */
-		Response res = userTargetValid.request().header(authorizationHeaderName, authorizationHeaderValue).get();
+		Response res = userTarget.path("people").request().header(authorizationHeaderName, authorizationHeaderValue).get();
 		// correct authentication.no exception
 		assertTrue(res.getStatus() == 200);
 
@@ -144,21 +141,21 @@ public class PersonServiceTest extends ServiceTest {
 		// 401 Unauthorized
 		assertTrue(res.getStatus() == 401);
 
-		res = userTargetValidInes.request().header(authorizationHeaderName, authorizationHeaderValue).get();
+		res = userTarget.path("people/2").request().header(authorizationHeaderName, authorizationHeaderValue).get();
 		// valid. keine exception
 		assertTrue(res.getStatus() == 200);
 
-		res = userTargetInvalidUser.request().header(authorizationHeaderName, authorizationHeaderValue).get();
+		res = userTarget.path("/people/20").request().header(authorizationHeaderName, authorizationHeaderValue).get();
 		// ClientErrorException 404keine passende Entitaet
 		assertTrue(res.getStatus() == 404);
 
-		res = userTargetValidInes.request().header(authorizationHeaderName, authorizationHeaderValue)
+		res = userTarget.path("people/2").request().header(authorizationHeaderName, authorizationHeaderValue)
 				.accept(APPLICATION_JSON).get();
-
+		
 		// return media type APPLICATION_JSON
 		assertEquals(APPLICATION_JSON_TYPE, res.getMediaType());
 
-		res = userTargetValidInes.request().header(authorizationHeaderName, authorizationHeaderValue)
+		res = userTarget.path("people/2").request().header(authorizationHeaderName, authorizationHeaderValue)
 				.accept(APPLICATION_XML).get();
 		// returns media type APPLICATION_XML_TYPE because APPLICATION_XMLis
 		// simply a string
@@ -206,8 +203,8 @@ public class PersonServiceTest extends ServiceTest {
 		/*
 		 * Test getPerson
 		 */
-		WebTarget webTargetInes = this.newWebTarget("ines", "ines").path("people/2");
-		response = webTargetInes.request().accept(APPLICATION_JSON).get();
+		//WebTarget webTargetInes = this.newWebTarget("ines", "ines").path("people/2");
+		response = webTarget.path("people/2").request().accept(APPLICATION_JSON).get();
 		Person returnedPerson = response.readEntity(Person.class);
 		assertTrue(response.getStatus() == 200);
 		assertEquals(2L, returnedPerson.getIdentiy());
@@ -217,7 +214,7 @@ public class PersonServiceTest extends ServiceTest {
 		 */
 		
 		List<Message> msgs;		
-		WebTarget webTargetInesMsgs = this.newWebTarget("ines", "ines").path("people/2/messagesAuthored");
+		WebTarget webTargetInesMsgs = newWebTarget("ines.bergmann@web.de", "ines").path("people/2/messagesAuthored");
 		response = webTargetInesMsgs.request().accept(APPLICATION_JSON).get();		
 		msgs = response.readEntity(new GenericType<List<Message>>() {});	
 		assertNotEquals(0, msgs.size());
@@ -226,22 +223,22 @@ public class PersonServiceTest extends ServiceTest {
 		/*
 		 * Test peopleObserving
 		 */
-		WebTarget webTargetInesPeopleObserving = this.newWebTarget("ines", "ines").path("people/2/peopleObserving");
-		List<Person>peopleObserving;		
+		WebTarget webTargetInesPeopleObserving = newWebTarget("ines.bergmann@web.de", "ines").path("people/2/peopleObserving");
+		Person[] peopleObserving;		
 		response = webTargetInesPeopleObserving.request().accept(APPLICATION_JSON).get();		
-		peopleObserving = response.readEntity(new GenericType<List<Person>>() {});
+		peopleObserving = response.readEntity(Person[].class);
 		
-		assertEquals(6, peopleObserving.size());
+		assertEquals(6, peopleObserving.length);
 		assertTrue(response.getStatus() == 200);
-		assertEquals(3L, peopleObserving.get(0).getIdentiy()); 
-		assertEquals(4L, peopleObserving.get(0).getIdentiy());
-		assertEquals(5L, peopleObserving.get(0).getIdentiy());
-		assertEquals(6L, peopleObserving.get(0).getIdentiy());
+		assertEquals(3L, peopleObserving[0].getIdentiy()); 
+		assertEquals(4L, peopleObserving[0].getIdentiy());
+		assertEquals(5L, peopleObserving[0].getIdentiy());
+		assertEquals(6L, peopleObserving[0].getIdentiy());
 		
 		/*
 		 * Test peopleObserved
 		 */
-		WebTarget webTargetInesPeopleObserved = this.newWebTarget("ines", "ines").path("people/2/peopleObserved");
+		WebTarget webTargetInesPeopleObserved = newWebTarget("ines", "ines").path("people/2/peopleObserved");
 		List<Person>peopleObserved;		
 		response = webTargetInesPeopleObserved.request().accept(APPLICATION_JSON).get();		
 		peopleObserved = response.readEntity(new GenericType<List<Person>>() {});

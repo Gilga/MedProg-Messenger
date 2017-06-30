@@ -27,6 +27,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
+import com.sun.istack.internal.NotNull;
+
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
 import de.sb.messenger.persistence.Person;
@@ -89,9 +91,8 @@ public class PersonService {
 		{
 			Person person = em.find(Person.class, id);
 			
-			if (person == null)	throw new ClientErrorException(NOT_FOUND);
-			
-			people.add(person);
+			if (person != null)
+				people.add(person);
 		};
 		
 		Person[] result = people.toArray(new Person[]{});
@@ -203,39 +204,57 @@ public class PersonService {
 	@PUT
 	@Path("{identity}/peopleObserved")
 	@Consumes({ APPLICATION_JSON, APPLICATION_XML })
-	public void updatePerson (@PathParam("identity") final long identity, long[] peopleObservedIdentities) {
-		if(peopleObservedIdentities == null) throw new ClientErrorException(BAD_REQUEST);
+	public void updatePerson (@PathParam("identity") final long identity, @NotNull long[] peopleObservedIdentities) {
 		
 		final EntityManager em = EntityService.getEntityManager();
 
+		Person person = getPerson(identity);
+		
+		Set<Long> initialList = new HashSet<>();
+		Set<Long> added = new HashSet<>();
+		Set<Long> removed = new HashSet<>();
+		Set<Long> changed = new HashSet<>();
+		
+		for(Person p : person.getPeopleObserved()) {
+			initialList.add(p.getIdentiy());
+		}
+		
+		person.getPeopleObserved().clear();
+ 		
 		Set<Person> people = new HashSet<Person>();
-		for(long id : peopleObservedIdentities){
-			
-			// check if already in list - remove dublicates
-			boolean found = false;
-			for(Person p : people){
-				if(p.getIdentiy() == id) { found=true; break; }
-			}
-			
-			if(!found) {
-				Person p = em.find(Person.class, id);
-				if(p!=null) people.add(p);
+		for(long id : peopleObservedIdentities){		
+			Person p = em.find(Person.class, id);
+				
+			if(p!=null) {
+				added.add(p.getIdentiy());
+				person.getPeopleObserved().add(p);
 			}
 		}
+		
+		for(long idInExisting: initialList) {
+			if(!added.contains(idInExisting)) {
+				removed.add(idInExisting);
+			}
+		}
+		
 		
 		Person[] result = people.toArray(new Person[]{});
 		Arrays.sort( result ); // sort array
 		
-		Person person = getPerson(identity);
-		Set<Person> list = person.getPeopleObserved();
+		//flush the commit
+		EntityService.update(em, person);
 		
-		list.clear();
-		for(Person p : result){ list.add(p); }
 
-		EntityService.update(em,person);
+		changed.addAll(removed);
+		changed.addAll(added);
+		changed.add(person.getIdentiy());
 		
 		// clear Cache
-		em.getEntityManagerFactory().getCache().evict(Person.class, person.getIdentiy());
+		for(long changedIds: changed) {			
+			em.getEntityManagerFactory().getCache().evict(Person.class, changedIds);
+		}
+		// remember which id's you add and clear
+		// evict every person that got removed and added 
 	}
 	
 	@PUT
@@ -258,7 +277,14 @@ public class PersonService {
 		Document avatar;
 		
 		if(ids.isEmpty()){ // insert
-			avatar = new Document(mediaType, content);
+			avatar = new Document(mediaType, content);			
+			em.persist(avatar);
+			
+			try{
+				em.getTransaction().commit();
+			} finally {
+				em.getTransaction().begin();
+			}
 		}
 		else if(ids.size() == 1){ // update
 			avatar = em.find(Document.class, ids.get(0));
