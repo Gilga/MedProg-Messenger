@@ -24,6 +24,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
@@ -39,8 +40,9 @@ import de.sb.toolbox.net.RestCredentials;
 @Path("people")
 @Copyright(year=2013, holders="Sascha Baumeister")
 public class PersonService {
-
+	
 	@GET
+	//@Consumes({ APPLICATION_JSON, APPLICATION_XML })
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Person[] getPeople (
 			@QueryParam("offset") int offset,
@@ -53,27 +55,27 @@ public class PersonService {
 			@QueryParam("familyName") String familyName,
 			@QueryParam("city") String city,
 			@QueryParam("postCode") String postCode,
-			@QueryParam("street") String street) {
-		
+			@QueryParam("street") String street
+			) {
+
 		final EntityManager em = EntityService.getEntityManager();
-		
-		final String pql = "select p.identity from Person as p where"
+	
+		final String pql = "select p from Person p where" //select problem: he cant find identity or personIdentity
 		+" (:lowerCreationTimestamp is null or p.creationTimestamp >= :lowerCreationTimestamp)"
 		+" and (:upperCreationTimestamp is null or p.creationTimestamp <= :upperCreationTimestamp)"
-		+" and (:groupAlias is null or p.groupAlias = :groupAlias)"
+		+" and (:groupAlias is null or p.group = :groupAlias)"
 		+" and (:email is null or p.email = :email)"
 		+" and (:givenName is null or p.name.given = :givenName)"
 		+" and (:familyName is null or p.name.family = :familyName)"
 		+" and (:city is null or p.address.city = :city)"
-		+" and (:postCode is null or p.address.postCode = :postCode)"
-		+" and (:street is null or p.address.street = :street)"
-		;
-	
-		TypedQuery<Long> query = em.createQuery(pql, Long.class);
+		+" and (:postCode is null or p.address.postcode = :postCode)"
+		+" and (:street is null or p.address.street = :street)";
+
+		TypedQuery<Person> query = em.createQuery(pql, Person.class); // Long.class
 		
 		if(offset>0) query.setFirstResult(offset);
 		if(limit>0) query.setMaxResults(limit);
-		
+	
 		query.setParameter("lowerCreationTimestamp", lowerCreationTimestamp);
 		query.setParameter("upperCreationTimestamp", upperCreationTimestamp);
 		query.setParameter("groupAlias", group);
@@ -84,17 +86,21 @@ public class PersonService {
 		query.setParameter("postCode", postCode);
 		query.setParameter("street", street);
 		
-		List<Long> ids = query.getResultList();
-		List<Person> people = new ArrayList<>();
+		List<Person> people = query.getResultList();
 		
-		for (Long id : ids)
+		/*
+		List<Long> ids = new ArrayList<>();
+		List<Person> people = new ArrayList<>();
+
+		for (Long p : ids)
 		{
 			Person person = em.find(Person.class, id);
 			
 			if (person != null)
 				people.add(person);
 		};
-		
+		*/
+
 		Person[] result = people.toArray(new Person[]{});
 		Arrays.sort( result ); // sort array
 		
@@ -191,10 +197,10 @@ public class PersonService {
 		
 		return result;
 	}
-	
+
 	@GET
 	@Path("{identity}/avatar")
-	@Produces({ MEDIA_TYPE_WILDCARD })
+	@Produces(MediaType.WILDCARD) // MEDIA_TYPE_WILDCARD == error ?
 	public Response getAvatar (@PathParam("identity") final long identity) {
 		Document avatar = getPerson(identity).getAvatar();
 		ResponseBuilder rb = Response.ok(avatar.getContent(), avatar.getContentType());
@@ -259,7 +265,7 @@ public class PersonService {
 	
 	@PUT
 	@Path("{identity}/avatar")
-	@Consumes(MEDIA_TYPE_WILDCARD)
+	@Consumes(MediaType.WILDCARD) // MEDIA_TYPE_WILDCARD == error ?
 	@Produces({ TEXT_PLAIN })
 	public long updateAvatar (@HeaderParam("Authorization") final String authentication, @HeaderParam("Content-type") String mediaType, byte[] content) {
 		if(content == null || content.length==0) throw new ClientErrorException(BAD_REQUEST);

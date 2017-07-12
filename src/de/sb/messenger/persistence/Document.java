@@ -10,13 +10,21 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 @Entity
 @Table(schema="messenger", name = "Document")
 @DiscriminatorValue(value = "Document")
 @PrimaryKeyJoinColumn(name="documentIdentity")
+@XmlRootElement
+@XmlType
 public class Document extends BaseEntity {
-	static private final byte[] EMPTY_HASH = mediaHash(new byte[0]);
+	static private final byte[] EMPTY_CONTENT = new byte[0];
+	static private final byte[] EMPTY_HASH = mediaHash(EMPTY_CONTENT);
+	static private final String DEFAULT_MIME_TYPE = "text/plain";
+	static private final byte[] DEFAULT_CONTENT = new byte[1];
 	
 	@Column(name = "contentHash", unique = true, nullable = false)
 	@NotNull 
@@ -27,17 +35,19 @@ public class Document extends BaseEntity {
 	@NotNull 
 	@Size(min=1, max=63) 
 	@Pattern(regexp = "([a-z]+)/([a-z.+-]+)")
+	@XmlElement
 	private String contentType;
 	
 	@Column(name = "content" , nullable = false)
 	@NotNull 
-	@Size(min = 1, max = 16777215)
+	@Size(min = 1, max = 16777215) // actually this min size should be zero, empty content may be allowed
+	@XmlElement
 	private byte[] content;
 
 	public Document(String contentType, byte[] content) {
 		this.contentHash = content == null ? EMPTY_HASH : mediaHash(content);
-		this.contentType = contentType;
-		this.content = content;
+		this.contentType = contentType == null ? DEFAULT_MIME_TYPE : contentType;
+		this.content = content == null ? DEFAULT_CONTENT : content;
 	}
 
 	protected Document() {

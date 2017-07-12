@@ -2,6 +2,9 @@ package de.sb.messenger.rest;
 
 import static javax.ws.rs.core.Response.Status.INTERNAL_SERVER_ERROR;
 import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
+
+import java.util.Arrays;
+
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 import javax.persistence.PersistenceException;
@@ -36,13 +39,13 @@ public interface Authenticator {
 	
 			String email = credentials.getUsername(); // username == email?
 			byte[] passwordHash = Person.passwordHash(credentials.getPassword());
-		
+			
 			TypedQuery<Person> query = EntityService.getEntityManager().createQuery(pql, Person.class);
 			query.setParameter("email", email);
 			//sql passowrd check: pql+=" and p.password = :password"; query.setParameter("password", passwordHash);
 			Person person = query.getSingleResult();
 			
-			if(person != null && person.getPasswordHash() != passwordHash){	person = null; }
+			if(person != null && !Arrays.equals(person.getPasswordHash(),passwordHash)){ person = null; }
 			if(person == null) throw new ClientErrorException(UNAUTHORIZED); // HTTP 401, new NotAuthorizedException("Basic");
 			
 			return person;
