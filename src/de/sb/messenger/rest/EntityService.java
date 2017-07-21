@@ -50,7 +50,7 @@ public class EntityService {
 		// update
 		EntityTransaction et = em.getTransaction();
 		//et.begin();
-		if(obj.getIdentiy() == 0) em.persist(obj); // insert
+		if(obj.getIdentity() == 0) em.persist(obj); // insert
 		else em.flush(); // update
 	
 		try{		
@@ -64,9 +64,9 @@ public class EntityService {
 		// update
 		EntityTransaction et = em.getTransaction();
 		et.begin();
-		if(obj1.getIdentiy() == 0) em.persist(obj1); // insert
-		if(obj2.getIdentiy() == 0) em.persist(obj2); // insert
-		if((obj1.getIdentiy() != 0) || (obj2.getIdentiy() != 0) ) em.flush(); // update
+		if(obj1.getIdentity() == 0) em.persist(obj1); // insert
+		if(obj2.getIdentity() == 0) em.persist(obj2); // insert
+		if((obj1.getIdentity() != 0) || (obj2.getIdentity() != 0) ) em.flush(); // update
 		et.commit();
 	}
 

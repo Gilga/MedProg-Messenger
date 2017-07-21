@@ -43,10 +43,10 @@ public class MessageService {
 		EntityService.update(em, message);
 		
 		// clear Cache
-		emf.getCache().evict(Person.class, author.getIdentiy());
-		emf.getCache().evict(BaseEntity.class, subject.getIdentiy());
+		emf.getCache().evict(Person.class, author.getIdentity());
+		emf.getCache().evict(BaseEntity.class, subject.getIdentity());
 		
-		return message.getIdentiy();
+		return message.getIdentity();
 	}
 	
 	@GET
