@@ -15,6 +15,7 @@ import javax.persistence.InheritanceType;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -31,16 +32,19 @@ import javax.xml.bind.annotation.XmlType;
 public class BaseEntity implements Comparable<BaseEntity> {
 
 	@Id
+	@NotNull
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "identity")
 	@XmlElement
-	private long identiy;
+	private long identity;
 	
+	@NotNull
 	@Column(name = "version")
 	@Min(1)
 	@XmlElement
 	private int version;
-	
+
+	@NotNull
 	@Column(name = "creationTimestamp")
 	@XmlElement
 	private long creationTimestamp;
@@ -49,14 +53,14 @@ public class BaseEntity implements Comparable<BaseEntity> {
 	private Set<Message> messagesCaused;
 
 	public BaseEntity() {
-		this.identiy = 0;
+		this.identity = 0;
 		this.version = 1;
 		this.creationTimestamp = System.currentTimeMillis();
 		messagesCaused = Collections.emptySet();
 	}
 
-	public long getIdentiy() {
-		return identiy;
+	public long getIdentity() {
+		return identity;
 	}
 
 	public int getVersion() {
@@ -77,6 +81,6 @@ public class BaseEntity implements Comparable<BaseEntity> {
 
 	@Override
 	public int compareTo(final BaseEntity obj) {
-		return Long.compare(this.identiy, obj.identiy);
+		return Long.compare(this.identity, obj.identity);
 	}
 }

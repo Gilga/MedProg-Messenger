@@ -45,6 +45,7 @@ public class Person extends BaseEntity {
 	@Column(name = "email", unique = true, updatable = true, nullable = false)
 	@Pattern(regexp = "(.+)@(.+)", message = "{invalid.email}")
 	@NotNull
+	@XmlElement
 	@Size(min = 1, max = 128)
 	private String email;
 
