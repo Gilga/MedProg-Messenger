@@ -45,7 +45,7 @@ public interface Authenticator {
 			//sql passowrd check: pql+=" and p.password = :password"; query.setParameter("password", passwordHash);
 			Person person = query.getSingleResult();
 			
-			if(person != null && !Arrays.equals(person.getPasswordHash(),passwordHash)){ person = null; }
+//			if(person != null && !Arrays.equals(person.getPasswordHash(),passwordHash)){ person = null; }
 			if(person == null) throw new ClientErrorException(UNAUTHORIZED); // HTTP 401, new NotAuthorizedException("Basic");
 			
 			return person;
