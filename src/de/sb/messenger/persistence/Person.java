@@ -3,6 +3,7 @@ package de.sb.messenger.persistence;
 import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
 import java.util.Set;
 
 import javax.persistence.CascadeType;
@@ -10,9 +11,10 @@ import javax.persistence.Column;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
-import javax.persistence.FetchType;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
@@ -22,69 +24,77 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 @Entity
-@Table(name = "Person")
+@Table(schema = "messenger", name = "Person")
 @DiscriminatorValue(value = "Person")
-@PrimaryKeyJoinColumn(name="identity")
+@PrimaryKeyJoinColumn(name = "personIdentity")
+@XmlRootElement
+@XmlType
 public class Person extends BaseEntity {
 
-	@Column(name = "group")
-	@Enumerated
+	@Column(name = "groupAlias", updatable = true, nullable = false)
+	@Enumerated(EnumType.STRING)
+	@NotNull
+	@XmlElement
 	private Group group;
-	
-	@Column(name = "email")
-	@Pattern(regexp = "/\\S+\\@\S+\\.\\S+/", message = "{invalid.email}")
-	@NotNull @Size(min = 1, max = 128)
+
+	@Column(name = "email", unique = true, updatable = true, nullable = false)
+	@Pattern(regexp = "(.+)@(.+)", message = "{invalid.email}")
+	@NotNull
+	@XmlElement
+	@Size(min = 1, max = 128)
 	private String email;
-	
-	@Column(name = "passwordHash")
-	@NotNull @Size(min = 32, max = 32)
+
+	@Column(name = "passwordHash", updatable = true, nullable = false)
+	@NotNull
+	@Size(min = 32, max = 32)
 	private byte[] passwordHash;
 
-	@Embedded 
+	@Embedded
 	@Valid
-	//@OneToOne
+	@NotNull
+	@XmlElement
 	private Name name;
 
-	@Embedded 
+	@Embedded
 	@Valid
-	//@OneToOne
+	@NotNull
+	@XmlElement
 	private Address address;
-	
-	@Valid
-	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="identity")
+
+	@ManyToOne
+	@JoinColumn(name = "avatarReference", updatable = true, nullable = false)
 	private Document avatar;
-	
-	@OneToMany(mappedBy = "author")
-	private Set<Message> messages;
-	
-	@ManyToMany(mappedBy = "peopleObserved") //cascade = CascadeType.REMOVE
+
+	@OneToMany(mappedBy = "author", cascade = CascadeType.REMOVE)
+	@JoinColumn(updatable = false, insertable = false)
+	private Set<Message> messagesAuthored;
+
+	@ManyToMany(mappedBy = "peopleObserved", cascade = CascadeType.REMOVE)
+	@JoinColumn(updatable = false, insertable = false, nullable = false)
 	private Set<Person> peopleObserving;
-	
+
 	@ManyToMany
-	@JoinTable(
-		name = “peopleRelations“,
-		joinColumns = @JoinColumn(name=“peopleObserved_ID“, referencedColumnName="identity"),
-		inverseJoinColumns = @JoinColumn(name=“peopleObserving_ID“, referencedColumnName="identity")
-	)
+	@JoinTable(schema = "messenger", name = "ObservationAssociation", joinColumns = @JoinColumn(name = "observingReference", updatable = true, nullable = false), inverseJoinColumns = @JoinColumn(name = "observedReference", updatable = false, nullable = false))
 	private Set<Person> peopleObserved;
 
-	public Person(Group group, String email) {
-		this.group = group;
+	public Person(String email, Document avatar) {
+		this.group = Group.USER;
 		this.email = email;
-		this.name = null;
-		this.address = null;
-		this.avatar = null;
+		this.name = new Name();
+		this.address = new Address();
+		this.avatar = avatar;
+		peopleObserved = Collections.emptySet();
+		peopleObserving = Collections.emptySet();
+		messagesAuthored = Collections.emptySet();
 	}
 
 	protected Person() {
-		this.name = null;
-		this.address = null;
-		this.group = null;
-		this.email = null;
-		this.avatar = null;
+		this(null, null);
 	}
 
 	static public enum Group {
@@ -131,12 +141,8 @@ public class Person extends BaseEntity {
 		this.avatar = avatar;
 	}
 
-	public Set<Message> getMessagesList() {
-		return messages;
-	}
-
-	public void setMessagesList(Set<Message> messagesList) {
-		this.messages = messagesList;
+	public Set<Message> getMessagesAuthored() {
+		return messagesAuthored;
 	}
 
 	public Set<Person> getPeopleObserving() {
@@ -148,7 +154,11 @@ public class Person extends BaseEntity {
 	}
 
 	@Size(min = 32, max = 32)
-	static public byte[] passwordHash(String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		return MessageDigest.getInstance("SHA-256").digest(password.getBytes("UTF-8"));
+	static public byte[] passwordHash(String password) {
+		try {
+			return MessageDigest.getInstance("SHA-256").digest(password.getBytes("UTF-8"));
+		} catch (NoSuchAlgorithmException | UnsupportedEncodingException e) {
+			throw new AssertionError(e);
+		}
 	}
 }

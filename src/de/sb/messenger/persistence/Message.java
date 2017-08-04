@@ -8,23 +8,33 @@ import javax.persistence.ManyToOne;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
 import javax.validation.constraints.Size;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlType;
 
 @Entity
-@Table(name = "Message")
+@Table(schema="messenger", name = "Message")
 @DiscriminatorValue(value = "Message")
-@PrimaryKeyJoinColumn(name="identity")
+@PrimaryKeyJoinColumn(name="messageIdentity")
+@XmlRootElement
+@XmlType
 public class Message extends BaseEntity {
-
+	
 	@ManyToOne
-	@JoinColumn(name="identity")
+	@JoinColumn(name="authorReference", nullable = false)
+	@XmlElement
 	private Person author;
 	
 	@ManyToOne
-	@JoinColumn(name="identity")
+	@JoinColumn(name="subjectReference", nullable = false)
+	@XmlElement
 	private BaseEntity subject;
 	
-	@Column(name = "body")
+	@Column(name = "body", nullable = false)
 	@Size(min = 1, max = 4093)
+	@XmlElement
 	private String body;
 
 	public Message(Person author, BaseEntity subject, String body) {
@@ -34,9 +44,7 @@ public class Message extends BaseEntity {
 	}
 
 	protected Message() {
-		this.author = null;
-		this.subject = null;
-		this.body = null;
+		this(null, null, null);
 	}
 	
 	public Person getAuthor() {
