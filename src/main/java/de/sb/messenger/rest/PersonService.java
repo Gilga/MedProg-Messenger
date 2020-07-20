@@ -3,11 +3,11 @@ package de.sb.messenger.rest;
 import static javax.ws.rs.core.MediaType.TEXT_PLAIN;
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
-import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
+//import static javax.ws.rs.core.MediaType.MEDIA_TYPE_WILDCARD;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 import static javax.ws.rs.core.Response.Status.BAD_REQUEST;
 
-import java.util.ArrayList;
+//import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +15,7 @@ import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.TypedQuery;
+
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -28,7 +29,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 
-import com.sun.istack.internal.NotNull;
+//import com.sun.istack.internal.NotNull;
+import javax.validation.constraints.NotNull;
 
 import de.sb.messenger.persistence.Document;
 import de.sb.messenger.persistence.Message;
@@ -147,6 +149,8 @@ public class PersonService {
 	@Path("requester")
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public static Person getRequester(@HeaderParam("Authorization") final String authentication) {
+		//System.out.println("YES!");
+		//return new Person("email@web.de", new Document(null,null));
 		return Authenticator.authenticate(RestCredentials.newBasicInstance(authentication));
 	}
 
@@ -154,6 +158,7 @@ public class PersonService {
 	@Path("{identity}")
 	@Produces({ APPLICATION_JSON, APPLICATION_XML })
 	public Person getPerson(@PathParam("identity") final long identity) {
+		System.out.println("identity");
 		final Person entity = EntityService.getEntityManager().find(Person.class, identity);
 		if (entity == null)
 			throw new ClientErrorException(NOT_FOUND);

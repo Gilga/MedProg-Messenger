@@ -23,7 +23,7 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 import javax.xml.bind.annotation.XmlType;
 
 @Entity
-@Table(schema="messenger", name = "BaseEntity")
+@Table(name = "BaseEntity") //schema="messenger", 
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name = "discriminator", discriminatorType=DiscriminatorType.STRING, length=20)
 @XmlAccessorType(XmlAccessType.NONE)

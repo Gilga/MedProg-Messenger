@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="error" dest="err" name="PropertiesConfig" packages="">
+
+    <Properties>
+        <Property name="logfile" value="app" />
+        <Property name="filepattern"     value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%5level] %t %l %m%n%throwable" />
+        <Property name="pattern_default" value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{white} %style{-----}{white} %msg%n" />
+        <Property name="pattern_info"    value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{white} %highlight{%5level}{INFO=yellow} %msg%n" />
+        <Property name="pattern_warn"    value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{white} %highlight{%5level}{WARN=magenta} %l %msg%n" />
+        <Property name="pattern_debug"   value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{white} %highlight{%5level}{DEBUG=cyan} %msg%n" />
+        <Property name="pattern_error"   value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{red} %highlight{%5level}{ERROR=red} %style{%t}{blue} %l %msg%n" />
+        <Property name="pattern_fatal"   value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{bright,red} %highlight{%5level}{FATAL=bright red} %style{%t}{blue} %l %msg%n" />
+        <Property name="pattern_trace"   value="%style{%d{yy-MM-dd HH:mm:ss.SSS}}{white} %highlight{%5level}{TRACE=bright blue} %style{%t}{blue} %l %m%n%throwable" />
+    </Properties>
+    
+    <Filters>
+        
+    </Filters>
+      
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout disableAnsi="false">
+                <ScriptPatternSelector defaultPattern="${pattern_default}">
+                    <Script name="LevelSelector" language="javascript">logEvent.getLevel()</Script>
+                    <PatternMatch key="WARN" pattern="${pattern_warn}"/>
+                    <PatternMatch key="INFO" pattern="${pattern_info}"/>
+                    <PatternMatch key="DEBUG" pattern="${pattern_debug}"/>
+                    <PatternMatch key="TRACE" pattern="${pattern_trace}"/>
+                    <PatternMatch key="ALL" pattern="${pattern_trace}"/>
+                </ScriptPatternSelector>
+            </PatternLayout> 
+            <LevelRangeFilter minLevel="WARN" maxLevel="TRACE" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+        
+        <Console name="ConsoleERROR" target="SYSTEM_ERR">
+            <PatternLayout disableAnsi="false">
+                <ScriptPatternSelector defaultPattern="${pattern_default}">
+                    <Script name="LevelSelector" language="javascript">logEvent.getLevel()</Script>
+                    <PatternMatch key="FATAL" pattern="${pattern_fatal}"/>
+                    <PatternMatch key="ERROR" pattern="${pattern_error}"/>
+                </ScriptPatternSelector>
+            </PatternLayout> 
+            <LevelRangeFilter minLevel="FATAL" maxLevel="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+        </Console>
+
+        <RollingFile name="RollingFile" fileName="./logs/${logfile}.log" 
+            filePattern="./target/logs/$${date:yyyy-MM-dd}/${logfile}-%d{yyyy-dd-MM-dd}-%i.log.gz"
+            append="true">
+            <PatternLayout pattern="${filepattern}" />
+            <Policies>
+                <!-- rollover on startup, daily and when the file reaches 100 MegaBytes -->
+                <OnStartupTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="100MB" />
+                <TimeBasedTriggeringPolicy interval="2" modulate="true" />
+<!--                 <DefaultRolloverStrategy max="10" /> -->
+            </Policies>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- LOG package at TRACE level -->
+        <!--
+        <Logger name="de.sb.messenger" level="trace" additivity="false">
+            <AppenderRef ref="ConsoleDEBUG" level="debug" />
+            <AppenderRef ref="RollingFile" level="debug" />
+        </Logger>
+        -->
+  
+        <!-- LOG everything at INFO level -->
+        <Root level="all" >
+            <AppenderRef ref="Console" level="info" />
+            <AppenderRef ref="ConsoleERROR" level="error" />
+            <AppenderRef ref="RollingFile" level="all" />
+        </Root>
+    </Loggers>
+
+</Configuration>

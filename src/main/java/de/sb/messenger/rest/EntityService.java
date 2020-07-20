@@ -1,6 +1,7 @@
 package de.sb.messenger.rest;
 
 import static de.sb.messenger.persistence.Person.Group.ADMIN;
+
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 import static javax.ws.rs.core.MediaType.APPLICATION_XML;
 import static javax.ws.rs.core.Response.Status.CONFLICT;
@@ -8,9 +9,11 @@ import static javax.ws.rs.core.Response.Status.FORBIDDEN;
 import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 import java.util.Arrays;
+
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.PersistenceException;
+
 import javax.persistence.RollbackException;
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.DELETE;
@@ -26,7 +29,6 @@ import de.sb.messenger.persistence.Person;
 import de.sb.toolbox.Copyright;
 import de.sb.toolbox.net.RestCredentials;
 import de.sb.toolbox.net.RestJpaLifecycleProvider;
-
 
 /**
  * JAX-RS based REST service implementation for polymorphic entity resources. The following path and

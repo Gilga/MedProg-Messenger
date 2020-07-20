@@ -7,6 +7,7 @@ import static javax.ws.rs.core.Response.Status.NOT_FOUND;
 
 import javax.persistence.EntityManager;
 import javax.persistence.EntityManagerFactory;
+
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
